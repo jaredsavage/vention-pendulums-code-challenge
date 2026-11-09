@@ -1,0 +1,632 @@
+/*
+  Plain black and white, in a mono font with a sans title. Style elements,
+  not classes.
+  The canvas drawing repeats these colours and the font in canvasStyle.ts.
+*/
+
+@import '@fontsource-variable/hanken-grotesk';
+@import '@fontsource-variable/inconsolata';
+
+:root {
+  --background: #000;
+  --foreground: #fff;
+  --muted: #999;
+  --connected: #4caf50;
+  --divider: #333;
+  --network-link: #555;
+  --blueprint: #1c344f;
+  --open-tab: rgb(255 255 255 / 0.06);
+  --button-hover: rgb(255 255 255 / 0.08);
+  --overlay: rgb(0 0 0 / 0.9);
+
+  /* Consolas can't be shipped, so other systems get its closest free match. */
+  --mono-font: Consolas, 'Inconsolata Variable', monospace;
+  --title-font: 'Hanken Grotesk Variable', system-ui, sans-serif;
+  --small-font-size: 0.75rem;
+
+  --space-small: 0.25rem;
+  --space: 0.5rem;
+  --space-large: 1rem;
+
+  color-scheme: dark;
+  scrollbar-color: var(--divider) transparent;
+}
+
+body {
+  margin: 0;
+  background: var(--background);
+  color: var(--foreground);
+  font: 0.875rem / 1.5 var(--mono-font);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Header and tabs on top; the open group fills the rest. */
+#root {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+/* With no group open, a quiet note in the middle. */
+#root > p {
+  display: grid;
+  flex: 1;
+  place-items: center;
+  margin: 0;
+  color: var(--muted);
+}
+
+/* Text */
+
+h1,
+h2,
+h3 {
+  margin: 0 0 var(--space);
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+h1 {
+  font-family: var(--title-font);
+  font-size: 1.75em;
+}
+
+h2 {
+  font-size: 1.4em;
+}
+
+h3 {
+  font-size: 1.2em;
+}
+
+p {
+  margin: 0 0 var(--space);
+}
+
+a {
+  color: inherit;
+}
+
+small {
+  font-size: var(--small-font-size);
+}
+
+/* A line under a title or heading: what the page is for, or an address. */
+:is(h1, h2) small {
+  display: block;
+  color: var(--muted);
+  font-weight: normal;
+}
+
+:is(h1, h2, aside li) small a {
+  text-decoration: none;
+}
+
+:is(h1, h2, aside li) small a:hover {
+  text-decoration: underline;
+}
+
+/* Numbers and names stand out from the muted text around them. */
+:is(header, article) b {
+  color: var(--foreground);
+}
+
+/* Controls */
+
+button,
+input {
+  box-sizing: border-box;
+  padding: var(--space-small) var(--space);
+  border: 1px solid var(--foreground);
+  border-radius: 0;
+  background: var(--background);
+  color: inherit;
+  font: inherit;
+}
+
+button:not(:disabled) {
+  cursor: pointer;
+}
+
+:disabled {
+  opacity: 0.4;
+}
+
+/* Drawn here so it looks the same on every system. */
+input[type='checkbox'] {
+  flex: none;
+  width: 14px;
+  height: 14px;
+  margin: 0;
+  padding: 0;
+  appearance: none;
+}
+
+input[type='checkbox']:checked {
+  background: var(--foreground) url('./images/tick.svg') center no-repeat;
+}
+
+label {
+  display: flex;
+  align-items: center;
+  gap: var(--space);
+}
+
+/* The group commands and the view switch: outlined like the other lines,
+   lighting up a little on hover. */
+:is([role='toolbar'], header [role='group']) button {
+  padding-inline: 0.75rem;
+  border-color: var(--divider);
+}
+
+:is([role='toolbar'], header [role='group'])
+  button:not(:disabled, [aria-pressed='true']):hover {
+  border-color: var(--muted);
+  background: var(--button-hover);
+}
+
+/* A disabled one fades into its outline. */
+:is([role='toolbar'], header [role='group']) button:disabled {
+  color: var(--divider);
+  opacity: 1;
+}
+
+/* Header */
+
+header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space) var(--space-large);
+  padding: var(--space-large);
+  border-bottom: 1px solid var(--divider);
+}
+
+header h1 {
+  margin: 0 auto 0 0;
+}
+
+/* Beside the title, out of Sim Manager's frame and into a tab of its own. */
+h1 > a {
+  color: var(--muted);
+}
+
+h1 > a:hover {
+  color: var(--foreground);
+}
+
+h1 > a svg {
+  width: 0.5em;
+  height: 0.5em;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.25;
+}
+
+header p {
+  flex-basis: 100%;
+  margin: 0;
+  color: var(--muted);
+}
+
+/* Scene or Network: buttons joined into one, the chosen one filled. Its
+   outline matches its fill, and sits over its neighbour's where they overlap. */
+header [role='group'] {
+  display: flex;
+}
+
+header [role='group'] button + button {
+  margin-left: -1px;
+}
+
+header [role='group'] button[aria-pressed='true'] {
+  position: relative;
+  border-color: var(--foreground);
+  background: var(--foreground);
+  color: var(--background);
+}
+
+/* Group tabs */
+
+nav {
+  display: flex;
+  border-bottom: 1px solid var(--divider);
+}
+
+nav button {
+  padding: var(--space) var(--space-large);
+  border: 0;
+  border-right: 1px solid var(--divider);
+  background: none;
+  color: var(--muted);
+  font-size: 1.4em;
+  font-weight: 600;
+}
+
+nav button[aria-pressed='true'] {
+  background: var(--open-tab);
+  color: var(--foreground);
+}
+
+nav small {
+  font-weight: normal;
+}
+
+/* The open group */
+
+article {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+
+/* The view fills the whole space, and the commands float over its top. Both
+   sit in the same grid cell. */
+article > section {
+  display: grid;
+  flex: 1;
+  grid-template: minmax(0, 1fr) / minmax(0, 1fr);
+  min-height: 0;
+}
+
+article > section > * {
+  grid-area: 1 / 1;
+}
+
+/* The bar lets the pointer through to the drawing, so the scene can be dragged
+   behind it. Only its controls catch it. */
+[role='toolbar'] {
+  z-index: 1;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: start;
+  align-self: start;
+  gap: var(--space);
+  padding: var(--space-large);
+  pointer-events: none;
+}
+
+/* The buttons, then how the group runs under them. */
+[role='toolbar'] > div {
+  display: grid;
+  justify-items: start;
+  gap: var(--space-small);
+}
+
+[role='toolbar'] > div > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space);
+}
+
+[role='toolbar'] :is(button, label) {
+  pointer-events: auto;
+}
+
+/* As tall as a button, so Edit mode lines up with the buttons beside it. */
+[role='toolbar'] label {
+  padding-block: var(--space-small);
+  border-block: 1px solid transparent;
+}
+
+/* Machines answer a group command a moment apart. A note waits half a second
+   before showing, so it doesn't flash up. */
+[role='toolbar'] small {
+  color: var(--muted);
+  animation: appear-late 0.5s step-end;
+}
+
+@keyframes appear-late {
+  from {
+    opacity: 0;
+  }
+}
+
+/* Readouts in the corners, over the drawing, so it keeps its size. */
+figcaption,
+[data-network] > p {
+  position: absolute;
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--small-font-size);
+  pointer-events: none;
+}
+
+/* Scene */
+
+figure {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  margin: 0;
+}
+
+/* A dot every metre, which grid.ts places and fades as the view moves. */
+canvas {
+  display: block;
+  flex: 1;
+  width: 100%;
+  min-height: 0;
+  background-image: radial-gradient(
+    circle at 1px 1px,
+    rgb(from var(--divider) r g b / var(--canvas-grid-opacity, 1)) 1px,
+    transparent 1px
+  );
+  background-size: var(--canvas-grid-spacing, 0px)
+    var(--canvas-grid-spacing, 0px);
+  background-position: var(--canvas-grid-x, 0px) var(--canvas-grid-y, 0px);
+}
+
+/* While editing, a blueprint: faint dashed lines a metre apart, on blue. */
+figure[data-blueprint='true'] canvas {
+  background-color: var(--blueprint);
+  background-image: url('./images/blueprint-grid.svg');
+}
+
+[role='toolbar'][data-blueprint='true'] button {
+  border-color: rgb(from var(--foreground) r g b / 0.35);
+  background: var(--blueprint);
+}
+
+aside[data-blueprint='true'] {
+  border-left-color: var(--blueprint);
+  background: var(--blueprint);
+  box-shadow: -12px 0 48px rgb(0 0 0 / 0.3);
+}
+
+figcaption {
+  inset: auto var(--space-large) var(--space-large);
+  text-align: right;
+  white-space: nowrap;
+}
+
+/* Network */
+
+/* The largest square that fits either way, so the nodes land on the drawing.
+   The padding keeps it clear of the commands and the corners. */
+[data-network] {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-height: 0;
+  padding: calc(var(--space-large) * 3) var(--space-large);
+  container-type: size;
+}
+
+[data-network] > div {
+  position: relative;
+  width: min(100cqw, 100cqh);
+  aspect-ratio: 1;
+}
+
+/* The group's totals, in the bottom corner. */
+[data-network] > p {
+  inset: auto auto var(--space-large) var(--space-large);
+}
+
+[data-network] > p span {
+  display: block;
+}
+
+[data-network] svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+[data-network] svg path {
+  fill: none;
+  stroke: var(--network-link);
+  stroke-width: 0.2;
+}
+
+/* A dash of no length with round ends is a dot, and shifting them moves it.
+   Each path measures its length in dots, so one unit is one dot's spacing. */
+[data-network] svg path[data-active] {
+  stroke: var(--foreground);
+  stroke-width: 1.5px;
+  stroke-dasharray: 0 1;
+  stroke-linecap: round;
+  vector-effect: non-scaling-stroke;
+  animation: travel 0.6s linear infinite;
+}
+
+@keyframes travel {
+  to {
+    stroke-dashoffset: -1;
+  }
+}
+
+[data-network] svg path[data-faded='true'] {
+  opacity: 0.1;
+}
+
+/* The same size as a pendulum's anchor in the scene. */
+[data-network] button {
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1;
+  transform: translate(-50%, -50%);
+}
+
+[data-network] button[aria-pressed='true'] {
+  background: var(--foreground);
+  color: var(--background);
+}
+
+/* The selected machine, a line each, in a box about an inch in from its node,
+   with its near edge facing it. Under the nodes, so it never hides one. */
+[data-network] > div > p {
+  position: absolute;
+  margin: 0;
+  padding: var(--space-small) var(--space);
+  border: 1px solid var(--divider);
+  background: var(--background);
+  color: var(--muted);
+  font-size: var(--small-font-size);
+  line-height: 1.4;
+  white-space: nowrap;
+  pointer-events: none;
+  transform: translate(
+    calc(-50% + var(--direction-x) * 50%),
+    calc(-50% + var(--direction-y) * 50%)
+  );
+}
+
+[data-network] > div > p span {
+  display: block;
+}
+
+/* A grey line between who it is and its numbers. */
+[data-network] > div > p > span:nth-child(2) {
+  margin: 0 calc(-1 * var(--space)) var(--space-small);
+  padding: 0 var(--space) var(--space-small);
+  border-bottom: 1px solid var(--divider);
+}
+
+/* Machine panel */
+
+aside {
+  position: relative;
+  flex: none;
+  width: 18rem;
+  padding: var(--space-large);
+  overflow-y: auto;
+  border-left: 1px solid var(--divider);
+}
+
+/* Level with the title: as tall as its first line, 1.4em at a line height
+   of 1.25. */
+aside > button[aria-label='Close'] {
+  position: absolute;
+  top: var(--space-large);
+  right: var(--space-large);
+  padding: 0 var(--space-small);
+  border: 0;
+  background: none;
+  color: var(--muted);
+  font-size: 1.75em;
+  line-height: 1;
+}
+
+aside > button[aria-label='Close']:hover {
+  color: var(--foreground);
+}
+
+/* The status, then why on a line of its own, so the panel never jumps. A
+   long reason is cut short. */
+aside [role='status'] {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+aside [role='status'] b {
+  display: block;
+}
+
+aside section {
+  margin-bottom: var(--space-large);
+}
+
+aside h3 {
+  padding-bottom: var(--space-small);
+  border-bottom: 1px solid var(--divider);
+}
+
+/* A stepper row: the name, then − value +. The buttons' columns stay put
+   without them, so the value doesn't move when Edit turns on. */
+aside section > div {
+  display: grid;
+  grid-template-columns: 1fr 1.75rem 3.5rem 1.75rem;
+  align-items: center;
+  gap: var(--space-small);
+  margin-bottom: var(--space-small);
+}
+
+aside section > div :is(button, input) {
+  background: transparent;
+}
+
+aside section > div button {
+  border: 0;
+}
+
+aside section > div input {
+  width: 100%;
+  padding-inline: 0;
+  border-width: 0 0 1px;
+  text-align: center;
+}
+
+/* Outside Edit, just the value, in the same place and as tall as the field,
+   so nothing moves when Edit turns on. */
+aside section > div output {
+  grid-column: 3;
+  padding-block: var(--space-small);
+  border-bottom: 1px solid transparent;
+  text-align: center;
+}
+
+aside ul {
+  display: grid;
+  gap: var(--space);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+aside li button {
+  padding: 0;
+  border: 0;
+  background: none;
+}
+
+aside li button:hover {
+  text-decoration: underline;
+}
+
+aside li small {
+  display: block;
+  color: var(--muted);
+}
+
+/* Whether it's connected, as a coloured dot. */
+[role='img'][data-connected] {
+  display: inline-block;
+  width: 0.5rem;
+  height: 0.5rem;
+  margin-right: var(--space);
+  border-radius: 50%;
+  background: var(--muted);
+  transition: background-color 0.5s;
+  vertical-align: middle;
+}
+
+[role='img'][data-connected='true'] {
+  background: var(--connected);
+}
+
+/* Hovering it lists the rest of the group. */
+aside small[title] {
+  cursor: default;
+}
+
+/* Connection lost */
+
+/* Dims the page once the supervisor's stream drops. */
+[data-connection-lost] {
+  position: fixed;
+  z-index: 1000;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: var(--overlay);
+  color: var(--muted);
+}
