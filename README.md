@@ -20,7 +20,7 @@ This will start up a few things:
 
 - Supervisor: http://127.0.0.1:4000
 - Sim Manager: http://127.0.0.1:4050
-  - Simulated Machines: http://127.0.0.1:4101 ~ 4199
+  - Simulated Machines: http://127.0.0.1:5101 and up
 
 Sim Manager is the place to start. They're separate, but for the sake of demo convenience, I embedded the Supervisor in a frame beside Sim Manager.
 

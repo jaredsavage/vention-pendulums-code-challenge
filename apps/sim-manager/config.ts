@@ -6,7 +6,8 @@ const port = Number(process.env.SIM_MANAGER_PORT ?? 4050);
 const supervisorUrl = process.env.SUPERVISOR_URL ?? 'http://127.0.0.1:4000';
 const dataDirectory =
   process.env.SIM_MANAGER_DATA ?? join(import.meta.dirname, 'data');
-const machinePortStart = Number(process.env.MACHINE_PORT_START ?? 4101);
+// Browsers and fetch refuse a few ports, like 4190 and 6000.
+const machinePortStart = Number(process.env.MACHINE_PORT_START ?? 5101);
 
 // Sim Machine is a separate program, found by its package name.
 const machineProgram = fileURLToPath(

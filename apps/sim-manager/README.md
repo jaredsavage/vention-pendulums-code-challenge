@@ -32,4 +32,4 @@ Resolved in [config.ts](config.ts).
 | `SIM_MANAGER_PORT`   | `4050`                  | Page and API port                                                          |
 | `SUPERVISOR_URL`     | `http://127.0.0.1:4000` | Supervisor address for the iframe and machines                             |
 | `SIM_MANAGER_DATA`   | App's `data/` directory | Group and environment files; relative paths start at the working directory |
-| `MACHINE_PORT_START` | `4101`                  | First machine port                                                         |
+| `MACHINE_PORT_START` | `5101`                  | First machine port                                                         |
