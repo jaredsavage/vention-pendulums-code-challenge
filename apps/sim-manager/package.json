@@ -1,0 +1,23 @@
+{
+  "name": "@repo/sim-manager",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node src/server/index.ts",
+    "build": "vite build",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run --root ../.. apps/sim-manager/tests"
+  },
+  "dependencies": {
+    "@fontsource-variable/hanken-grotesk": "^5.3.0",
+    "@fontsource-variable/inconsolata": "^5.3.0",
+    "@repo/network": "0.1.0",
+    "@repo/protocol": "0.1.0",
+    "@repo/sim-machine": "0.1.0",
+    "express": "^5.3.0",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.0",
+    "zod": "^4.6.7"
+  }
+}

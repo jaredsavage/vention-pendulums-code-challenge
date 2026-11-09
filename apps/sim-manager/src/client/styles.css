@@ -1,0 +1,364 @@
+/*
+  A dark machined panel beside the supervisor's page, so it reads as the tool
+  that runs the simulation rather than part of it. Style elements, not classes.
+*/
+
+@import '@fontsource-variable/hanken-grotesk';
+@import '@fontsource-variable/inconsolata';
+
+:root {
+  --background: #000;
+  --foreground: #fff;
+  --muted: #999;
+  --panel: #262626;
+  --line: #555;
+  --menu: #111;
+  --pill: rgb(67 67 67 / 0.37);
+  --edge: rgb(255 255 255 / 0.15);
+  --glass: rgb(255 255 255 / 0.06);
+
+  /* Light and shade, for the raised and pressed-in parts. */
+  --highlight: rgb(255 255 255 / 0.18);
+  --soft-highlight: rgb(255 255 255 / 0.11);
+  --lip: rgb(255 255 255 / 0.08);
+  --shadow: rgb(0 0 0 / 0.5);
+  --groove: rgb(0 0 0 / 0.44);
+  --socket: rgb(0 0 0 / 0.35);
+
+  --sheen: linear-gradient(160deg, var(--lip), transparent 45%);
+  --window-shadow: 0 16px 48px var(--shadow);
+
+  /* Consolas can't be shipped, so other systems get its closest free match. */
+  --mono-font: Consolas, 'Inconsolata Variable', monospace;
+  --title-font: 'Hanken Grotesk Variable', system-ui, sans-serif;
+  --small-font-size: 0.75rem;
+
+  --space-small: 0.25rem;
+  --space: 0.5rem;
+  --space-large: 1rem;
+
+  /* The dropdown and the sliders share a height, with fully rounded ends. */
+  --control-height: 22px;
+  --control-radius: calc(var(--control-height) / 2);
+  --socket-width: 3px;
+
+  color-scheme: dark;
+}
+
+/* Desktop */
+
+/* Black, flecked with recycled plastic. */
+body {
+  margin: 0;
+  background: var(--background);
+  background-image: var(--sheen), url('./images/page-flecks.svg');
+  background-size: auto, 250px;
+  background-blend-mode: normal, luminosity;
+  color: var(--foreground);
+  font: 0.875rem / 1.5 var(--title-font);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Two windows float over the background. */
+#root {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  gap: var(--space-large);
+  box-sizing: border-box;
+  height: 100vh;
+  padding: var(--space-large);
+}
+
+/* Windows */
+
+:is(main, article) {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+  border: 1px solid var(--edge);
+  border-radius: 12px;
+  box-shadow: var(--window-shadow);
+}
+
+/* Flecked grey plastic, lit along its top edge. The title and sections pad
+   their own sides, so the grooves between them run edge to edge. */
+main {
+  padding-top: var(--space-large);
+  background-color: var(--panel);
+  background-image: var(--sheen), url('./images/panel-flecks.svg');
+  background-size: auto, 240px;
+  box-shadow:
+    inset 0 1px var(--highlight),
+    var(--window-shadow);
+}
+
+/* The supervisor's page, filling the other window. */
+article {
+  background: var(--background);
+}
+
+iframe {
+  flex: 1;
+  width: 100%;
+  min-height: 0;
+  border: 0;
+}
+
+/* Panel */
+
+h1,
+h2 {
+  margin: 0 0 var(--space);
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+h2 {
+  font-size: 1em;
+}
+
+/* What the page is for, under its title. */
+h1 small {
+  display: block;
+  color: var(--muted);
+  font-size: var(--small-font-size);
+  font-weight: normal;
+}
+
+/* Everything under the title scrolls together on a short screen. */
+main > div {
+  flex: 1;
+  min-height: 0;
+  padding-bottom: var(--space-large);
+  overflow-y: auto;
+  scrollbar-color: var(--line) transparent;
+  scrollbar-width: thin;
+}
+
+/* A groove between the parts: a dark line, lit along its lower lip. The
+   title's stays put while the sections scroll under it, so both its lines
+   are drawn inside it, where the scrolling can't cover them. */
+h1 {
+  margin-bottom: 0;
+  padding: 0 var(--space-large) var(--space-large);
+  border-bottom: 1px solid var(--lip);
+  box-shadow: inset 0 -1px var(--shadow);
+  font-size: 1.75em;
+}
+
+section {
+  margin-bottom: var(--space-large);
+  padding: var(--space-large) var(--space-large) 0;
+}
+
+section + section {
+  border-top: 1px solid var(--shadow);
+  box-shadow: inset 0 1px var(--lip);
+}
+
+section:last-child {
+  margin-bottom: 0;
+}
+
+/* A section's title, with its control to the right. */
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--space-large);
+}
+
+header h2 {
+  margin: 0;
+}
+
+/* Process list */
+
+ul {
+  display: grid;
+  gap: var(--space);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-family: var(--mono-font);
+  font-size: var(--small-font-size);
+}
+
+/* One line each, cut short when the panel is too narrow. */
+li {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+li h3 {
+  margin: var(--space) 0 0;
+  color: var(--muted);
+  font-size: var(--small-font-size);
+  font-weight: normal;
+}
+
+/* The process number in a small black box, like a terminal window. */
+li b {
+  display: inline-grid;
+  place-items: center;
+  box-sizing: border-box;
+  width: 20px;
+  height: 18px;
+  margin-right: var(--space);
+  border: 1px solid var(--line);
+  border-top-width: 2px;
+  background: var(--background);
+  cursor: default;
+  font-size: 11px;
+  font-weight: normal;
+  vertical-align: middle;
+}
+
+/* A machine's address opens its page, and only says so on hover. */
+li a {
+  color: inherit;
+  text-decoration: none;
+}
+
+li a:hover {
+  text-decoration: underline;
+}
+
+/* Controls */
+
+label {
+  gap: var(--space);
+  margin-bottom: var(--space);
+  font-size: var(--small-font-size);
+}
+
+/* A checkbox, then its name. */
+label:has(> input[type='checkbox']) {
+  display: flex;
+  align-items: center;
+  text-transform: capitalize;
+}
+
+/* Glass, with a thin tick to match the dropdown's chevron. */
+input[type='checkbox'] {
+  flex: none;
+  box-sizing: border-box;
+  width: 14px;
+  height: 14px;
+  margin: 0;
+  border: 1px solid var(--edge);
+  border-radius: 3px;
+  appearance: none;
+  background: var(--glass);
+}
+
+input[type='checkbox']:checked {
+  background: var(--glass) url('./images/tick.svg') no-repeat center;
+}
+
+input[type='checkbox']:hover {
+  border-color: var(--muted);
+}
+
+/* A pill sunk in a socket, with a thin chevron in place of the native one.
+   The margin makes room for the socket. */
+select {
+  box-sizing: border-box;
+  width: 80px;
+  height: var(--control-height);
+  margin-block: var(--socket-width);
+  padding: 0 calc(var(--space) * 3) 0 var(--control-radius);
+  border: 0;
+  border-radius: var(--control-radius);
+  appearance: none;
+  background: var(--pill) url('./images/chevron.svg') no-repeat;
+  background-position: right var(--control-radius) center;
+  box-shadow:
+    inset 0 1px var(--soft-highlight),
+    0 0 0 var(--socket-width) var(--socket),
+    0 1px 0 var(--socket-width) var(--lip);
+  color: inherit;
+  font: inherit;
+  font-size: var(--small-font-size);
+  text-transform: capitalize;
+  cursor: pointer;
+}
+
+/* The open list is drawn by the browser, and needs its own dark background. */
+option {
+  background: var(--menu);
+}
+
+/* The name and value on one line, with the slider beneath them. */
+label:has(> input[type='range']) {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: var(--space-small);
+  color: var(--muted);
+}
+
+label output {
+  color: var(--foreground);
+  font-weight: 700;
+}
+
+/* The wind's direction, as an arrow. */
+output svg {
+  width: 10px;
+  height: 10px;
+  margin-right: var(--space-small);
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+}
+
+/* A groove pressed into the panel. The padding keeps the thumb off its rounded
+   ends. */
+input[type='range'] {
+  grid-column: 1 / -1;
+  box-sizing: border-box;
+  width: 100%;
+  height: var(--control-height);
+  margin: 0;
+  padding: 0 7px;
+  border-radius: var(--control-radius);
+  appearance: none;
+  background: transparent;
+  box-shadow:
+    inset 0 2px 7px var(--groove),
+    0 1px 2px var(--lip);
+  cursor: pointer;
+}
+
+/* The track still places the thumb, but the groove is the only thing drawn. */
+input::-webkit-slider-runnable-track {
+  height: 2px;
+  background: transparent;
+}
+
+input::-moz-range-track {
+  height: 2px;
+  background: transparent;
+}
+
+/* Centred on the 2px track. */
+input::-webkit-slider-thumb {
+  width: 10px;
+  height: 10px;
+  margin-top: -4px;
+  border-radius: 50%;
+  appearance: none;
+  background: var(--foreground);
+}
+
+input::-moz-range-thumb {
+  width: 10px;
+  height: 10px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--foreground);
+}

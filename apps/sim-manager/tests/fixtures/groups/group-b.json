@@ -1,0 +1,12 @@
+{
+  "id": "group-b",
+  "members": [
+    {
+      "anchor": { "x": 0, "y": -3 },
+      "length": 1,
+      "initialAngle": 15,
+      "radius": 0.1,
+      "mass": 1
+    }
+  ]
+}

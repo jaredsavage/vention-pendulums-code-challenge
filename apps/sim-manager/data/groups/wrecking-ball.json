@@ -1,0 +1,40 @@
+{
+  "id": "Wrecking Ball",
+  "members": [
+    {
+      "anchor": { "x": 1, "y": -3 },
+      "length": 1.26,
+      "initialAngle": -35,
+      "radius": 0.5,
+      "mass": 1
+    },
+    {
+      "anchor": { "x": 7.07, "y": -5.15 },
+      "length": 5,
+      "initialAngle": -35,
+      "radius": 0.14,
+      "mass": 1.5
+    },
+    {
+      "anchor": { "x": 4.6, "y": -3 },
+      "length": 4.66,
+      "initialAngle": -22,
+      "radius": 2.3,
+      "mass": 2
+    },
+    {
+      "anchor": { "x": 6.4, "y": -3 },
+      "length": 1.6,
+      "initialAngle": 28,
+      "radius": 0.12,
+      "mass": 1
+    },
+    {
+      "anchor": { "x": 3.19, "y": -6 },
+      "length": 2.69,
+      "initialAngle": -18,
+      "radius": 1.06,
+      "mass": 1.2
+    }
+  ]
+}

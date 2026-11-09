@@ -1,0 +1,40 @@
+{
+  "id": "Lachine",
+  "members": [
+    {
+      "anchor": { "x": 1, "y": -3 },
+      "length": 1.8,
+      "initialAngle": -35,
+      "radius": 0.5,
+      "mass": 1
+    },
+    {
+      "anchor": { "x": 2.8, "y": -3 },
+      "length": 1.8,
+      "initialAngle": -35,
+      "radius": 0.14,
+      "mass": 1.5
+    },
+    {
+      "anchor": { "x": 4.6, "y": -3 },
+      "length": 2.2,
+      "initialAngle": -22,
+      "radius": 0.16,
+      "mass": 2
+    },
+    {
+      "anchor": { "x": 6.4, "y": -3 },
+      "length": 1.6,
+      "initialAngle": 28,
+      "radius": 0.12,
+      "mass": 1
+    },
+    {
+      "anchor": { "x": 8.2, "y": -3 },
+      "length": 2,
+      "initialAngle": -18,
+      "radius": 0.14,
+      "mass": 1.2
+    }
+  ]
+}

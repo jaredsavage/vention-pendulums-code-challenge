@@ -1,0 +1,69 @@
+{
+  "id": "Solar System",
+  "members": [
+    {
+      "name": "Mercury",
+      "anchor": { "x": 1, "y": -4 },
+      "length": 3,
+      "initialAngle": -5,
+      "radius": 0.093,
+      "mass": 3.301e23
+    },
+    {
+      "name": "Venus",
+      "anchor": { "x": 2, "y": -4 },
+      "length": 3,
+      "initialAngle": 5,
+      "radius": 0.146,
+      "mass": 4.867e24
+    },
+    {
+      "name": "Earth",
+      "anchor": { "x": 3, "y": -4 },
+      "length": 3,
+      "initialAngle": -5,
+      "radius": 0.15,
+      "mass": 5.972e24
+    },
+    {
+      "name": "Mars",
+      "anchor": { "x": 4, "y": -4 },
+      "length": 3,
+      "initialAngle": 5,
+      "radius": 0.109,
+      "mass": 6.417e23
+    },
+    {
+      "name": "Jupiter",
+      "anchor": { "x": 6, "y": -4 },
+      "length": 3,
+      "initialAngle": -5,
+      "radius": 0.502,
+      "mass": 1.898e27
+    },
+    {
+      "name": "Saturn",
+      "anchor": { "x": 9, "y": -4 },
+      "length": 3,
+      "initialAngle": 5,
+      "radius": 0.461,
+      "mass": 5.683e26
+    },
+    {
+      "name": "Uranus",
+      "anchor": { "x": 11, "y": -4 },
+      "length": 3,
+      "initialAngle": -5,
+      "radius": 0.3,
+      "mass": 8.681e25
+    },
+    {
+      "name": "Neptune",
+      "anchor": { "x": 12.5, "y": -4 },
+      "length": 3,
+      "initialAngle": 5,
+      "radius": 0.295,
+      "mass": 1.024e26
+    }
+  ]
+}

@@ -1,0 +1,6 @@
+{
+  "gravity": 9.81,
+  "windSpeed": 17,
+  "windDirection": 0,
+  "airDensity": 1.225
+}
