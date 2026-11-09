@@ -1,0 +1,53 @@
+{
+  "name": "vention-pendulums",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "dev": "node scripts/dev.ts",
+    "predev": "npm run build --workspace @repo/sim-manager",
+    "supervisor": "node scripts/dev.ts --only=supervisor",
+    "sim-manager": "node scripts/dev.ts --only=sim-manager",
+    "presim-manager": "npm run build --workspace @repo/sim-manager",
+    "build": "npm run build --workspace @repo/supervisor --workspace @repo/sim-manager",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint . --max-warnings=0",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "check": "npm run typecheck && npm run lint && npm run test",
+    "pretest": "npm run build"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@types/express": "^5.0.6",
+    "@types/node": "^24.19.2",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^6.2.1",
+    "eslint": "^10.14.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "globals": "^17.14.0",
+    "prettier": "^3.9.10",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.72.1",
+    "vite": "^8.3.5",
+    "vitest": "^5.1.0"
+  },
+  "allowScripts": {
+    "esbuild@0.28.2": true
+  },
+  "workspaces": [
+    "apps/sim-machine",
+    "apps/sim-manager",
+    "apps/supervisor",
+    "packages/network",
+    "packages/protocol"
+  ]
+}
