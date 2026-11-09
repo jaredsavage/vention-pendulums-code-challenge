@@ -128,7 +128,7 @@ Write focused tests for behaviour that matters and for the edge cases that could
 - Other agents may be working here at the same time. Read a file right before you edit it, and check its modified time right before you save. If it changed, read it again and merge your change in. Never save an old copy over someone else's work.
 - Stay in scope. Don't rewrite things you weren't asked to touch. If you spot a problem elsewhere, tell me.
 - Don't commit unless I ask. I control the history.
-- `.meta/` holds my own notes and the challenge brief. Don't edit it, and never link to it from code or from `docs/`. Keep screenshots and other test artifacts out of the repo.
+- `.meta/` holds my own notes and the challenge brief. Don't edit it, and never link to it from code or from `docs/`. Keep test screenshots and other test artifacts out of the repo. Images the docs show go in `docs/images/`.
 - Match verification to the change. For docs-only edits, read the changed text, check any affected links, and check formatting on the files touched. No builds or tests needed. For code changes, run the relevant tests and static checks. Use `npm run check` and `npm run format:check` for broader changes, such as shared protocol, dependencies, or build configuration. Always do the readability review, and report checks that failed or couldn't run.
 
 ## Documentation

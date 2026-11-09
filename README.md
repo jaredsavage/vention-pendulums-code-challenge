@@ -7,6 +7,8 @@ Sim Manager spins up sims with specific configurations, giving them their Superv
 Built with Node.js 24+, TypeScript, React.
 Co-authored by Deepseek, ChatGPT, Claude, and Grok.
 
+![Sim Manager beside the supervisor, with the Dagenais group swinging](docs/images/sim-manager-and-supervisor.png)
+
 ## Run it
 
 ```sh
