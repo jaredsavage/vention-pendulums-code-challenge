@@ -218,16 +218,22 @@ export class Machine {
   }
 
   // A machine still running when the rest of its group resumes joins their
-  // run, so a group that paused unevenly comes back together.
+  // run, so a group that paused unevenly comes back together. A stopped one,
+  // like a machine that's just been added, joins from its starting angle.
   private startWithGroup({ runId, resume }: StartCommand): Result {
     const stopped = this.status === 'stopped';
-    const resumable = this.status === 'paused' || this.status === 'running';
-    if (resume && !resumable) return refuse('Cannot resume this run.');
+    const canJoin =
+      stopped || this.status === 'paused' || this.status === 'running';
+    if (resume && !canJoin) return refuse('Cannot resume this run.');
     if (!resume && !stopped) return refuse('Stop before starting a new run.');
     if (!this.allPeersReady) return refuse('Required peers are not ready.');
 
-    const reason = resume ? 'Resumed with the group' : 'Started with the group';
-    this.run(runId, resume, reason);
+    // A stopped machine has nothing to carry on from, so it starts afresh.
+    const carriesOn = resume && !stopped;
+    const reason = carriesOn
+      ? 'Resumed with the group'
+      : 'Started with the group';
+    this.run(runId, carriesOn, reason);
 
     return { ok: true };
   }

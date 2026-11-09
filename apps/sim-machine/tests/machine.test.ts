@@ -62,6 +62,20 @@ describe('neighbours and runs', () => {
     expect(machine.status).toBe('running');
     expect(machine.state.runId).toBe('resumed-run');
   });
+
+  it('joins a group resume while stopped, from its starting angle', () => {
+    const machine = joinedMachine();
+    const { initialAngle } = own.properties;
+    const startingAngle = (initialAngle * Math.PI) / 180;
+    const { properties } = peer;
+
+    machine.receive(fromPeer({ type: 'PROPERTIES', properties }));
+    machine.command({ type: 'START', runId: 'resumed-run', resume: true });
+
+    expect(machine.status).toBe('running');
+    expect(machine.state.runId).toBe('resumed-run');
+    expect(machine.state.angle).toBeCloseTo(startingAngle);
+  });
 });
 
 describe('being configured', () => {

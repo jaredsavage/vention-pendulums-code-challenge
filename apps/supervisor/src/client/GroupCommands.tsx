@@ -147,23 +147,26 @@ export function GroupCommands({
 }
 
 // What the group can be asked to do, going by its machines' statuses. A group
-// that paused unevenly can still resume: running machines join in.
+// that paused unevenly can still resume: running machines join in, and stopped
+// ones, like a machine that's just been added, join from their starting angle.
 function availableCommands(machines: ObservedMachine[]) {
   const statuses = machines.map(({ state }) => state?.status);
   const hasMachines = machines.length > 0;
 
   const allStopped = statuses.every((status) => status === 'stopped');
-  const allPaused =
-    hasMachines && statuses.every((status) => status === 'paused');
   const somePaused = statuses.includes('paused');
-  const pausedOrRunning = statuses.every(
-    (status) => status === 'paused' || status === 'running',
+  const someMoving = statuses.some(
+    (status) => status !== 'paused' && status !== 'stopped',
+  );
+  const canJoinResume = statuses.every(
+    (status) =>
+      status === 'paused' || status === 'running' || status === 'stopped',
   );
 
   return {
     start: hasMachines && allStopped,
-    resume: somePaused && pausedOrRunning,
-    pause: !allStopped && !allPaused,
+    resume: somePaused && canJoinResume,
+    pause: someMoving,
     stop: !allStopped,
   };
 }

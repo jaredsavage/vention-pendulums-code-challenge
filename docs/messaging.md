@@ -53,7 +53,7 @@ Machines derive the next run ID from the previous one, so they agree on it and c
 
 Each machine counts down on its own clock. If a peer starts first, a message from that run ends the countdown and starts the machine right away. If that message is another STOP, it stops again immediately.
 
-Group changes, a peer disconnecting, or a neighbour going quiet pause active machines. Starting requires all peers connected and their properties received.
+Group changes, a peer disconnecting, or a neighbour going quiet pause active machines. Starting requires all peers connected and their properties received. A resume brings everyone along: running machines join the run, and stopped ones, like a machine that's just been added, join from their starting angle.
 
 ## Reports
 
