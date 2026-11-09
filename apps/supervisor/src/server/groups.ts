@@ -22,6 +22,7 @@ export interface MachineGroup {
   // When a machine last joined or left.
   changedAt: number;
   autostarted: boolean;
+  stopOnCollision: boolean | null;
 }
 
 // The group as browsers see it: each machine, and what it last reported.
@@ -58,6 +59,7 @@ export function createGroupRegistry() {
       busy: false,
       changedAt: Date.now(),
       autostarted: false,
+      stopOnCollision: null,
     };
     groups.set(id, group);
 

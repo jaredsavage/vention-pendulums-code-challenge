@@ -5,6 +5,7 @@ import {
   type Introduction,
   type Result,
 } from '@repo/protocol';
+import { shareCollisionSetting } from './commands.ts';
 import type {
   GroupRegistry,
   MachineGroup,
@@ -29,6 +30,7 @@ export function connectMachines(machines: Namespace, registry: GroupRegistry) {
 
     observeMachine(socket, entry, group, registry);
     registry.publishMembership(group);
+    shareCollisionSetting(group, socket);
   });
 }
 

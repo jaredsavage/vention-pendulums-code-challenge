@@ -35,6 +35,10 @@ async function dispatchCommand(
   command: Command,
   registry: GroupRegistry,
 ): Promise<Result> {
+  if (command.type === 'SET_COLLISION_STOPPING') {
+    group.stopOnCollision = command.enabled;
+  }
+
   const sockets = [...group.machines.values()].flatMap(({ socket }) =>
     socket ? [socket] : [],
   );
@@ -72,6 +76,18 @@ export async function configureMachine(
   }
 
   return sendCommand(socket, 'configure', command);
+}
+
+// A machine that joins after the group's collision setting changed hasn't
+// heard it yet. Nothing waits on its answer.
+export function shareCollisionSetting(group: MachineGroup, socket: Socket) {
+  const enabled = group.stopOnCollision;
+  if (enabled === null) return;
+
+  void sendCommand(socket, 'command', {
+    type: 'SET_COLLISION_STOPPING',
+    enabled,
+  });
 }
 
 async function sendCommand(

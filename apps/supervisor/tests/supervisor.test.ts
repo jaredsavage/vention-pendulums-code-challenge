@@ -72,14 +72,20 @@ async function statusOf(path: string, body: unknown) {
   return response.status;
 }
 
-// A stand-in machine that introduces itself the way a real one does, and is
-// registered once the supervisor tells it who's in its group.
-async function registerMachine(groupId: string, id: string, port: number) {
+// A stand-in machine that introduces itself the way a real one does.
+function connectMachine(groupId: string, id: string, port: number) {
   const socket = connectSocket(`${supervisor.url}/machines`, {
     groupId,
     machine: { id, name: id, url: `http://127.0.0.1:${port}` },
   });
   sockets.push(socket);
+
+  return socket;
+}
+
+// Registered once the supervisor tells it who's in its group.
+async function registerMachine(groupId: string, id: string, port: number) {
+  const socket = connectMachine(groupId, id, port);
 
   await new Promise((resolve) => socket.once('membership', resolve));
 
@@ -203,6 +209,19 @@ describe('supervisor commands', () => {
       error: 'Another group command is in progress.',
     });
     expect(await first).toEqual({ ok: true });
+  });
+
+  it('tells a machine that joins the collision setting its group was given', async () => {
+    supervisor = await startSupervisor({ port: 0 });
+    const first = await registerMachine('factory', 'machine-01', 5101);
+    recordCommands(first, 'command');
+    const turnOff = { type: 'SET_COLLISION_STOPPING', enabled: false };
+    await post('/api/groups/factory/command', turnOff);
+
+    const joining = connectMachine('factory', 'machine-02', 5102);
+    const commands = recordCommands(joining, 'command');
+
+    await expect.poll(() => commands).toContainEqual(turnOff);
   });
 
   it('starts a new group once its machines have gathered', async () => {
