@@ -6,7 +6,9 @@ The page embeds the supervisor dashboard in an iframe, for demo convenience. Bot
 
 Group and environment files live in [data/](data/). On startup, it selects the first of each alphabetically. Each machine gets its starting properties, environment and supervisor address when it's launched.
 
-Launching a machine again reloads its properties from the group file, so previous edits are lost. Collision restarts keep the same process and properties.
+Launching a machine again reloads its properties from the group file, so previous edits are lost unless you Update the group first. Update asks each running machine for its properties and saves them over the group's file. Collision restarts keep the same process and properties.
+
+New Group makes a group file with one pendulum, and Copy makes one from a running group as it is now. Either way, the new group starts straight away. New Machine adds a copy of a running group's rightmost machine, one spacing to its right, and End stops one machine's process.
 
 [src/server/](src/server/) handles processes and the API; [src/client/](src/client/) is the page.
 

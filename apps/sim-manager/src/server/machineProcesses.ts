@@ -2,16 +2,26 @@ import { spawn, type ChildProcess } from 'node:child_process';
 import { once } from 'node:events';
 import { basename } from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
-import type { Environment } from '@repo/protocol';
+import {
+  machinePropertiesSchema,
+  type Environment,
+  type MachineProperties,
+} from '@repo/protocol';
 import { CONFIG } from '../../config.ts';
 import type { MachineProcess, SimManagerState } from '../state.ts';
+import { environmentNames, readEnvironment } from './environments.ts';
 import {
-  environmentNames,
-  groupNames,
-  readEnvironment,
+  createGroupFile,
+  readGroupNames,
+  writeGroupMembers,
+  type MachineSnapshot,
+} from './groupFiles.ts';
+import {
+  addedMachine,
+  numberedMachine,
   readGroupMachines,
   type MachineDefinition,
-} from './data.ts';
+} from './machineDefinitions.ts';
 
 const HEALTH_POLL_MS = 100;
 const REQUEST_TIMEOUT_MS = 2000;
@@ -25,7 +35,8 @@ const MACHINE_RUNTIME_NAME = basename(MACHINE_RUNTIME);
 export type StateListener = (state: SimManagerState) => void;
 
 // Keeps the machines of the selected groups running, starting and stopping
-// only what changes. It's the only thing that stops them.
+// only what changes. It's the only thing that stops them. Saving and copying
+// groups go through it too, since they read from the running machines.
 export class MachineProcesses {
   private current = initialState();
   private readonly children = new Map<string, ChildProcess>();
@@ -44,7 +55,8 @@ export class MachineProcesses {
 
   // What's wanted changes at once, so choices made during a launch all count.
   selectGroups(names: string[]) {
-    const selectedGroups = groupNames.filter((name) => names.includes(name));
+    const { groups } = this.state;
+    const selectedGroups = groups.filter((name) => names.includes(name));
 
     this.update({ selectedGroups });
 
@@ -57,6 +69,28 @@ export class MachineProcesses {
 
   changeEnvironment(changes: Partial<Environment>) {
     return this.oneAtATime(() => this.applyChanges(changes));
+  }
+
+  // A snapshot of the group as it's running now, saved over its own file.
+  updateGroupFile(groupFile: string) {
+    return this.oneAtATime(() => this.saveRunningGroup(groupFile));
+  }
+
+  // A new group, started straight away: one pendulum, or a copy of a running
+  // group as it is now.
+  createGroup(name: string, copyOf?: string) {
+    return this.oneAtATime(() => this.addGroup(name, copyOf));
+  }
+
+  // One more machine in a running group, a copy of its rightmost one.
+  addMachine(groupFile: string) {
+    return this.oneAtATime(() => this.launchNextInLine(groupFile));
+  }
+
+  endProcess(id: string) {
+    const ending = this.state.processes.filter((machine) => machine.id === id);
+
+    return this.oneAtATime(() => this.stopProcesses(ending));
   }
 
   close() {
@@ -83,14 +117,31 @@ export class MachineProcesses {
   }
 
   private async launch(groupFile: string) {
-    const { environmentValues: environment, processes } = this.state;
+    const { environmentValues: environment } = this.state;
     const takeNumber = this.numberTaker();
     const definitions = readGroupMachines(groupFile, environment, takeNumber);
+
+    await this.startAll(groupFile, definitions);
+  }
+
+  private async launchNextInLine(groupFile: string) {
+    const { environmentValues: environment } = this.state;
+    const snapshots = await this.snapshotGroup(groupFile);
+    const properties = nextInLine(snapshots);
+    const takeNumber = this.numberTaker();
+    const number = takeNumber();
+    const member = { number, givenName: undefined, properties };
+    const definition = addedMachine(groupFile, member, environment);
+
+    await this.startAll(groupFile, [definition]);
+  }
+
+  private async startAll(groupFile: string, definitions: MachineDefinition[]) {
     const launched = definitions.map((definition) =>
       launchedProcess(definition, groupFile),
     );
 
-    this.update({ processes: [...processes, ...launched] });
+    this.update({ processes: [...this.state.processes, ...launched] });
     await Promise.all(definitions.map((definition) => this.start(definition)));
   }
 
@@ -160,6 +211,33 @@ export class MachineProcesses {
     await Promise.allSettled(requests);
   }
 
+  private async saveRunningGroup(groupFile: string) {
+    const snapshots = await this.snapshotGroup(groupFile);
+
+    writeGroupMembers(groupFile, snapshots);
+  }
+
+  // The new group is selected along with the others, so it starts.
+  private async addGroup(name: string, copyOf: string | undefined) {
+    const copies = copyOf ? await this.snapshotGroup(copyOf) : undefined;
+    const fileName = createGroupFile(name, copies);
+
+    const groups = readGroupNames();
+    const selectedGroups = [...this.state.selectedGroups, fileName];
+
+    this.update({ groups, selectedGroups });
+    await this.matchSelectedGroups();
+  }
+
+  // Every machine has to answer, or nothing is saved.
+  private snapshotGroup(groupFile: string) {
+    const members = this.state.processes.filter(
+      (machine) => machine.groupFile === groupFile,
+    );
+
+    return Promise.all(members.map(readSnapshot));
+  }
+
   private async stopProcesses(processes: MachineProcess[]) {
     await Promise.all(processes.map((machine) => this.stop(machine)));
   }
@@ -210,7 +288,7 @@ function initialState(): SimManagerState {
 
   return {
     supervisorUrl: CONFIG.SUPERVISOR_URL,
-    groups: groupNames,
+    groups: readGroupNames(),
     selectedGroups: [],
     environments: environmentNames,
     environment,
@@ -264,6 +342,40 @@ async function isHealthy(url: string) {
   } catch {
     return false;
   }
+}
+
+// A copy of the rightmost machine, one spacing further right: the gap between
+// the last two, or the width of a full swing when there's only one.
+function nextInLine(snapshots: MachineSnapshot[]): MachineProperties {
+  const leftToRight = snapshots
+    .map(({ properties }) => properties)
+    .toSorted((a, b) => a.anchor.x - b.anchor.x);
+  const last = leftToRight.at(-1)!;
+  const previous = leftToRight.at(-2);
+
+  const fullSwing = 2 * (last.length + last.radius);
+  const spacing = previous ? last.anchor.x - previous.anchor.x : fullSwing;
+  const nextX = last.anchor.x + spacing;
+  const centimetres = Math.round(nextX * 100);
+  const anchor = { x: centimetres / 100, y: last.anchor.y };
+
+  return { ...last, anchor };
+}
+
+// A name that's just the machine's number wasn't given by its group file.
+async function readSnapshot({
+  number,
+  name,
+  url,
+}: MachineProcess): Promise<MachineSnapshot> {
+  const response = await fetch(`${url}/api/properties`, {
+    signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+  });
+  const properties = machinePropertiesSchema.parse(await response.json());
+  const numbered = numberedMachine(number, undefined);
+  const givenName = name === numbered.name ? undefined : name;
+
+  return { givenName, properties };
 }
 
 async function postEnvironment(url: string, body: string) {

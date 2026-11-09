@@ -40,6 +40,10 @@ export function registerRoutes(app: Express, options: RouteOptions) {
     response.json({ ok: true });
   }
 
+  function readProperties(_request: Request, response: Response) {
+    response.json(device.properties);
+  }
+
   function reportHealth(_request: Request, response: Response) {
     response.json({ ok: true });
   }
@@ -57,7 +61,9 @@ export function registerRoutes(app: Express, options: RouteOptions) {
   app.get('/api/environment', readEnvironment);
   app.post('/api/environment', changeEnvironment);
 
-  // For whatever launched this machine: whether it's up, and a way to stop it.
+  // For whatever launched this machine: whether it's up, how it's set up now,
+  // and a way to stop it.
   app.get('/api/health', reportHealth);
+  app.get('/api/properties', readProperties);
   app.post('/api/shutdown', shutdown);
 }

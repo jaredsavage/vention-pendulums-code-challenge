@@ -3,6 +3,14 @@ import type { Command, ObservedMachine } from '@repo/protocol';
 
 const countdownFormat = new Intl.DurationFormat('en', { style: 'narrow' });
 
+const EDIT_HINT = 'Stop, reset and edit the group';
+const START_HINT = 'Start the group from where each pendulum starts';
+const RESUME_HINT = 'Resume the group from where it paused';
+const PAUSE_HINT = 'Pause every pendulum where it is';
+const STOP_HINT = 'Stop every pendulum where it is';
+const COLLISION_HINT =
+  'Stop the group when two pendulums collide, then restart it';
+
 interface Props {
   machines: ObservedMachine[];
   send: (command: Command) => void;
@@ -56,28 +64,40 @@ export function GroupCommands({
   }
 
   const editCheckbox = canEdit && (
-    <label>
+    <label title={EDIT_HINT}>
       <input type="checkbox" checked={editing} onChange={toggleEditing} />
       Edit mode
     </label>
   );
+  const startLabel = can.resume ? 'Resume' : 'Start';
+  const startHint = can.resume ? RESUME_HINT : START_HINT;
   const startButton = (
-    <button type="button" disabled={!can.start && !can.resume} onClick={start}>
-      {can.resume ? 'Resume' : 'Start'}
+    <button
+      type="button"
+      title={startHint}
+      disabled={!can.start && !can.resume}
+      onClick={start}
+    >
+      {startLabel}
     </button>
   );
   const pauseButton = (
-    <button type="button" disabled={!can.pause} onClick={pause}>
+    <button
+      type="button"
+      title={PAUSE_HINT}
+      disabled={!can.pause}
+      onClick={pause}
+    >
       Pause
     </button>
   );
   const stopButton = (
-    <button type="button" disabled={!can.stop} onClick={stop}>
+    <button type="button" title={STOP_HINT} disabled={!can.stop} onClick={stop}>
       Stop
     </button>
   );
   const collisionCheckbox = (
-    <label>
+    <label title={COLLISION_HINT}>
       <input
         type="checkbox"
         checked={stopOnCollision}

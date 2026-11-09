@@ -103,6 +103,7 @@ The supervisor's dashboard asks the machine through the network to change its po
 - Machines which can interact receive positional messages 45~60 times per second, so a fast collision can be caught late. [Time of impact](docs/notes/time-of-impact-estimation.md) could be a solution, but it's not implemented.
 - Each machine counts down by its own clock, so a group doesn't restart at exactly the same instant. They can receive messages a bit out of order, e.g. receiving positional updates from a neighbour when you think you're still in restart count down.
 - Every machine connects to every other machine in its group. That's fine for a few dozen, but it won't scale to large groups. Viele group network view illustrates this. I wish I'd used a better strategy.
+- Sim Manager writes group files straight into the data folder, and Update writes over the one that's there. No backup, no undo. Yolo.
 
 ## More
 

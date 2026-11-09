@@ -16,6 +16,7 @@
     "@repo/protocol": "0.1.0",
     "@repo/sim-machine": "0.1.0",
     "express": "^5.3.0",
+    "json-stringify-pretty-compact": "^4.0.0",
     "react": "^19.3.1",
     "react-dom": "^19.3.0",
     "zod": "^4.6.7"

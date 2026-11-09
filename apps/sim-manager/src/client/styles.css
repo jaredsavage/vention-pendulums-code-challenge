@@ -18,7 +18,6 @@
   --glass: rgb(255 255 255 / 0.06);
 
   /* Light and shade, for the raised and pressed-in parts. */
-  --highlight: rgb(255 255 255 / 0.18);
   --soft-highlight: rgb(255 255 255 / 0.11);
   --lip: rgb(255 255 255 / 0.08);
   --shadow: rgb(0 0 0 / 0.5);
@@ -37,7 +36,8 @@
   --space: 0.5rem;
   --space-large: 1rem;
 
-  /* The dropdown and the sliders share a height, with fully rounded ends. */
+  /* The dropdown, sliders and buttons share a height. The dropdown and sliders
+     have fully rounded ends. */
   --control-height: 22px;
   --control-radius: calc(var(--control-height) / 2);
   --socket-width: 3px;
@@ -82,16 +82,13 @@ body {
   box-shadow: var(--window-shadow);
 }
 
-/* Flecked grey plastic, lit along its top edge. The title and sections pad
-   their own sides, so the grooves between them run edge to edge. */
+/* Flecked grey plastic. The title and sections pad their own sides, so the
+   grooves between them run edge to edge. */
 main {
   padding-top: var(--space-large);
   background-color: var(--panel);
   background-image: var(--sheen), url('./images/panel-flecks.svg');
   background-size: auto, 240px;
-  box-shadow:
-    inset 0 1px var(--highlight),
-    var(--window-shadow);
 }
 
 /* The supervisor's page, filling the other window. */
@@ -186,15 +183,25 @@ ul {
   font-size: var(--small-font-size);
 }
 
-/* One line each, cut short when the panel is too narrow. */
+/* One line each, cut short when the panel is too narrow. As tall as a button,
+   so a line holds still when one appears. */
 li {
+  min-height: var(--control-height);
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
 }
 
+/* A group's heading, with New Machine at the end of the line. */
+li:has(> h3) {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: var(--space);
+}
+
 li h3 {
-  margin: var(--space) 0 0;
+  margin: 0;
   color: var(--muted);
   font-size: var(--small-font-size);
   font-weight: normal;
@@ -227,6 +234,23 @@ li a:hover {
   text-decoration: underline;
 }
 
+/* A machine's line: its number and address, then End while you're on it. The
+   address gives way to End. */
+li:has(> a) {
+  display: flex;
+  align-items: center;
+
+  > a {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  &:not(:hover, :has(:focus-visible)) > button {
+    display: none;
+  }
+}
+
 /* Controls */
 
 label {
@@ -239,20 +263,22 @@ label {
 label:has(> input[type='checkbox']) {
   display: flex;
   align-items: center;
-  text-transform: capitalize;
 }
 
-/* Glass, with a thin tick to match the dropdown's chevron. */
+/* Pressed into the panel like the sliders. Ticked, it fills with glass and a
+   thin tick to match the dropdown's chevron. */
 input[type='checkbox'] {
   flex: none;
   box-sizing: border-box;
-  width: 14px;
-  height: 14px;
+  width: 16px;
+  height: 16px;
   margin: 0;
-  border: 1px solid var(--edge);
+  border: 1px solid var(--socket);
   border-radius: 3px;
   appearance: none;
-  background: var(--glass);
+  box-shadow:
+    inset 0 2px 7px var(--groove),
+    0 1px 2px var(--lip);
 }
 
 input[type='checkbox']:checked {
@@ -261,6 +287,105 @@ input[type='checkbox']:checked {
 
 input[type='checkbox']:hover {
   border-color: var(--muted);
+}
+
+/* A row in the group list: a group, or a new group's name. As tall as a
+   button, so a row holds still when its buttons appear. */
+div:has(> label > input[type='checkbox']),
+div:has(> input[type='text']) {
+  display: flex;
+  align-items: center;
+  gap: var(--space);
+  min-height: var(--control-height);
+  margin-bottom: var(--space-small);
+}
+
+/* A group, then Update and Copy while you're on it. A long name stays on one
+   line, and gives way to them. */
+div:has(> label > input[type='checkbox']) {
+  > label {
+    flex: 1;
+    min-width: 0;
+    margin-bottom: 0;
+    overflow: hidden;
+    white-space: nowrap;
+  }
+
+  &:not(:hover, :has(:focus-visible)) > button {
+    display: none;
+  }
+}
+
+/* A new group's name, with just a × to cancel, where a group's checkbox would
+   be. */
+div:has(> input[type='text']) {
+  > button {
+    width: 16px;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--muted);
+    font-size: 14px;
+  }
+
+  > button:hover {
+    color: var(--foreground);
+  }
+}
+
+/* Flat grey like the dropdown, with a soft darker outline. The same font
+   wherever it is. */
+button {
+  box-sizing: border-box;
+  height: var(--control-height);
+  padding: 0 var(--space);
+  border: 1px solid var(--socket);
+  border-radius: 3px;
+  background: var(--pill);
+  color: var(--foreground);
+  font: inherit;
+  font-family: var(--title-font);
+  font-size: var(--small-font-size);
+  cursor: pointer;
+}
+
+/* The outline lights up, like a checkbox's. */
+button:is(:hover, :focus-visible) {
+  border-color: var(--muted);
+}
+
+/* New Group only shows while you're on the groups, and New Machine while
+   you're on its group. They keep their place, so the heading doesn't move when
+   they appear. */
+section:not(:hover, :has(:focus-visible)) > header > button,
+ul:not(:hover, :has(:focus-visible)) > li:has(> h3) > button {
+  visibility: hidden;
+}
+
+/* A new group's name, typed into a groove pressed into the panel like the
+   sliders'. The groove reaches back into the gap after the ×, so the name
+   lines up with the groups' names. */
+input[type='text'] {
+  flex: 1;
+  min-width: 0;
+  box-sizing: border-box;
+  height: var(--control-height);
+  margin-left: calc(-1 * var(--space));
+  padding: 0 var(--space);
+  border: 0;
+  border-radius: var(--control-radius);
+  background: transparent;
+  box-shadow:
+    inset 0 2px 7px var(--groove),
+    0 1px 2px var(--lip);
+  color: inherit;
+  font: inherit;
+  font-size: var(--small-font-size);
+}
+
+/* It's only there while you're typing in it, so it needs no focus ring. */
+input[type='text']:focus {
+  outline: none;
 }
 
 /* A pill sunk in a socket, with a thin chevron in place of the native one.

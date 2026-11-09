@@ -46,7 +46,12 @@ export function MachinePanel({
   const { id, name, url, online, state } = machine;
 
   const closeButton = (
-    <button type="button" aria-label="Close" onClick={onClose}>
+    <button
+      type="button"
+      aria-label="Close"
+      title="Close the machine panel"
+      onClick={onClose}
+    >
       ×
     </button>
   );

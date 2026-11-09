@@ -7,8 +7,8 @@ import { NetworkView } from './NetworkView.tsx';
 import type { SendMachineCommand } from './useCommandQueue.ts';
 
 export const GROUP_VIEWS = [
-  { name: 'scene', label: 'Scene' },
-  { name: 'network', label: 'Network' },
+  { name: 'scene', label: 'Scene', hint: 'Pendulums as they swing' },
+  { name: 'network', label: 'Network', hint: 'Connections between machines' },
 ] as const;
 
 export type GroupView = (typeof GROUP_VIEWS)[number]['name'];

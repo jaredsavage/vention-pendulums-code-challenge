@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { simManagerStateSchema, type SimManagerState } from '../state.ts';
 import { api } from './api.ts';
 import { EnvironmentSection } from './EnvironmentSection.tsx';
-import { GroupChecklist } from './GroupChecklist.tsx';
+import { GroupList } from './GroupList.tsx';
 import { ProcessList } from './ProcessList.tsx';
 
 export function App() {
@@ -27,10 +27,7 @@ export function App() {
           <small>Manage simulated machines</small>
         </h1>
         <div>
-          <GroupChecklist
-            groups={state.groups}
-            selected={state.selectedGroups}
-          />
+          <GroupList groups={state.groups} selected={state.selectedGroups} />
           <EnvironmentSection
             environments={state.environments}
             selected={state.environment}

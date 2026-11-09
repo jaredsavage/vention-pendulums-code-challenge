@@ -5,7 +5,6 @@ import express from 'express';
 import { EventStream } from '@repo/network';
 import { CONFIG } from '../../config.ts';
 import type { SimManagerState } from '../state.ts';
-import { groupNames } from './data.ts';
 import { registerRoutes } from './http.ts';
 import { MachineProcesses, type StateListener } from './machineProcesses.ts';
 
@@ -28,7 +27,7 @@ export async function startSimManager(onChange: StateListener) {
   http.listen(CONFIG.PORT, CONFIG.HOST);
   await once(http, 'listening');
 
-  const firstGroup = groupNames.slice(0, 1);
+  const firstGroup = machines.state.groups.slice(0, 1);
   void machines.selectGroups(firstGroup);
 
   async function close() {

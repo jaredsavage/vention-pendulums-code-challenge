@@ -105,10 +105,11 @@ function Header({ groups, connected, error, view, onViewChange }: HeaderProps) {
   );
   const statusMessage = connected ? onlineSummary : 'Connecting to supervisor';
 
-  const viewButtons = GROUP_VIEWS.map(({ name, label }) => (
+  const viewButtons = GROUP_VIEWS.map(({ name, label, hint }) => (
     <button
       key={name}
       type="button"
+      title={hint}
       aria-pressed={view === name}
       onClick={() => onViewChange(name)}
     >
@@ -120,7 +121,7 @@ function Header({ groups, connected, error, view, onViewChange }: HeaderProps) {
     <header>
       <h1>
         Supervisor {openInTab}
-        <small>Watch and command machine groups</small>
+        <small>Watch and control machine groups</small>
       </h1>
       <div role="group" aria-label="View">
         {viewButtons}
