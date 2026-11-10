@@ -10,7 +10,7 @@ import { useSupervisor } from './useSupervisor.ts';
 export function App() {
   const [view, setView] = useState<GroupView>('scene');
   const [openGroupId, setOpenGroupId] = useState('');
-  const { groups, updateHz, connected, error, send, configure } =
+  const { groups, updateHz, connected, error, send, setEditing, configure } =
     useSupervisor();
 
   // A new group never takes over the page. If the open one goes, the first
@@ -38,6 +38,7 @@ export function App() {
       view={view}
       updateHz={updateHz}
       send={(command) => send(openGroup.id, command)}
+      setEditing={(editing) => setEditing(openGroup.id, editing)}
       configure={(machineId, command) =>
         configure(openGroup.id, machineId, command)
       }

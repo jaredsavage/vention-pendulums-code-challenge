@@ -1,0 +1,46 @@
+{
+  "id": "Longo",
+  "stopOnCollision": true,
+  "members": [
+    {
+      "anchor": { "x": 3.02, "y": -6.01 },
+      "length": 6.47,
+      "initialAngle": 70,
+      "radius": 0.5,
+      "mass": 1,
+      "dragCoefficient": 0.47
+    },
+    {
+      "anchor": { "x": 3.29, "y": -4.6 },
+      "length": 1.8,
+      "initialAngle": -35,
+      "radius": 0.14,
+      "mass": 1.5,
+      "dragCoefficient": 0.47
+    },
+    {
+      "anchor": { "x": 4.6, "y": -3 },
+      "length": 2.2,
+      "initialAngle": -22,
+      "radius": 0.16,
+      "mass": 2,
+      "dragCoefficient": 0.47
+    },
+    {
+      "anchor": { "x": 3.62, "y": -3.74 },
+      "length": 0.61,
+      "initialAngle": 146,
+      "radius": 0.05,
+      "mass": 1,
+      "dragCoefficient": 0.47
+    },
+    {
+      "anchor": { "x": 4.26, "y": -4.56 },
+      "length": 2,
+      "initialAngle": -18,
+      "radius": 0.14,
+      "mass": 1.2,
+      "dragCoefficient": 0.47
+    }
+  ]
+}

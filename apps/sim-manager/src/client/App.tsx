@@ -2,8 +2,7 @@ import { useEffect, useState } from 'react';
 import { simManagerStateSchema, type SimManagerState } from '../state.ts';
 import { api } from './api.ts';
 import { EnvironmentSection } from './EnvironmentSection.tsx';
-import { GroupList } from './GroupList.tsx';
-import { ProcessList } from './ProcessList.tsx';
+import { GroupTree } from './GroupTree.tsx';
 
 export function App() {
   const [state, setState] = useState<SimManagerState>();
@@ -27,13 +26,16 @@ export function App() {
           <small>Manage simulated machines</small>
         </h1>
         <div>
-          <GroupList groups={state.groups} selected={state.selectedGroups} />
           <EnvironmentSection
             environments={state.environments}
             selected={state.environment}
             values={state.environmentValues}
           />
-          <ProcessList processes={state.processes} />
+          <GroupTree
+            groups={state.groups}
+            selected={state.selectedGroups}
+            processes={state.processes}
+          />
         </div>
       </main>
       <article>

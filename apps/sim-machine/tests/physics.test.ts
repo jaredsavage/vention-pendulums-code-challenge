@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { testGroup } from './fixtures.ts';
-import { advanceMotion, type Motion } from '../src/server/physics.ts';
+import { advanceMotion, type Motion } from '../src/physics.ts';
 
 const { machines, environment } = testGroup();
 const properties = machines[0]!.properties;

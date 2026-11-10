@@ -2,30 +2,29 @@
 
 One simulated pendulum, running as its own program. It registers with the supervisor, connects to its peers, and coordinates collisions and restarts with them.
 
-Physics stays inside the pendulum. Everything outside it works with reported measurements.
+Physics stays inside the machine. Everything outside it works with reported measurements.
 
 ```mermaid
 flowchart LR
-    subgraph MachineProcess["One Node process"]
-        MachineA["Machine A"] <-->|Method calls / measurements| Pendulum["Simulated pendulum"]
-    end
-    SupervisorServer["Supervisor server"] <-->|Socket.IO: discovery, commands, reports| MachineA
+    SupervisorServer["Supervisor server"] <-->|Socket.IO: discovery, commands, reports| MachineA["Machine A"]
     MachineA <-->|Socket.IO: properties, neighbour positions, recovery| MachineB["Machine B"]
     MachinePage["Machine status / logs"] <-->|HTTP| MachineA
 ```
 
-Start with [machine.ts](src/server/machine.ts) for group coordination, [recovery.ts](src/server/recovery.ts) for collision recovery, or [pendulum.ts](src/server/pendulum.ts) for the simulated device. [network/](src/server/network/) handles connections and HTTP routes.
+Start with [state.ts](src/state.ts) for everything the machine knows, then [machine.ts](src/machine.ts) for how commands, peer messages and each tick change it. [physics.ts](src/physics.ts) swings the pendulum, in steady steps from [fixedSteps.ts](src/fixedSteps.ts). [api.ts](src/api.ts) holds HTTP routes and [sockets.ts](src/sockets.ts) the connections. [index.ts](src/index.ts) starts it all.
 
 ## Status and logs
 
-Status at `/`, logs at `/logs`. Both plain text, refreshed manually. Logs stay in memory. Change machine properties from the supervisor dashboard.
+Status at `/`: everything the machine knows, what it reports to the supervisor, and how often it hears from each peer. Logs at `/logs`, one line each, newest first, kept in memory. Both are JSON, and refreshed manually. Change machine properties from the supervisor dashboard.
+
+Its definition can say where its settings are kept. Whenever its properties change, it sends them there with a PUT, and deleting the machine asks it to delete them with a DELETE. Without one, changes last as long as the process, and it can't be deleted.
 
 ## Run
 
-Sim Manager normally launches it. To run one yourself, set `MACHINE_DEFINITION` to JSON matching [definition.ts](src/server/definition.ts), then from the repository root:
+Sim Manager normally launches it. To run one yourself, set `MACHINE_DEFINITION` to JSON matching the definition in [state.ts](src/state.ts), then from the repository root:
 
 ```sh
-node apps/sim-machine/src/server/index.ts
+node apps/sim-machine/src/index.ts
 ```
 
 ## Configuration

@@ -77,6 +77,18 @@ export function MachinePanel({
 
   const { status, reason, properties } = state;
   const peers = machines.filter((peer) => peer.id !== id);
+
+  // The machine decides whether it can be deleted. A simulated one asks
+  // whatever keeps its settings to delete them, which ends it.
+  const destroyButton = editing && (
+    <button
+      type="button"
+      title="Shut this machine down and delete its saved settings. There's no undo."
+      onClick={() => void configure({ type: 'DESTROY' })}
+    >
+      Delete machine
+    </button>
+  );
   const statusLine = online ? (
     <>
       <b>{status}</b>
@@ -105,6 +117,7 @@ export function MachinePanel({
         editing={editing}
       />
       <Neighbours state={state} peers={peers} onSelect={onSelect} />
+      {destroyButton}
     </aside>
   );
 }
@@ -214,20 +227,19 @@ interface ValueFieldProps {
   onCommit: (value: number) => void;
 }
 
-// Sends what's typed once it's left or entered. Anything that isn't a new
-// number puts the value back.
+// Sends what's typed once it's left or entered, then shows the reported value
+// again. An accepted change shows up in the next report; a refused one never
+// does.
 function ValueField({ label, value, onCommit }: ValueFieldProps) {
   function commit(input: HTMLInputElement) {
     const typed = Number(input.value);
     const isNumber = input.value.trim() !== '' && Number.isFinite(typed);
-    const nothingToSend = !isNumber || typed === value;
-    if (nothingToSend) {
-      input.value = String(value);
-
-      return;
+    const isChange = isNumber && typed !== value;
+    if (isChange) {
+      onCommit(typed);
     }
 
-    onCommit(typed);
+    input.value = String(value);
   }
 
   function blurOnEnter(event: KeyboardEvent<HTMLInputElement>) {

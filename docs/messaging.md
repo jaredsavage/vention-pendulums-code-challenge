@@ -6,7 +6,7 @@ Browsers send requests over HTTP and receive live state over server-sent events.
 
 ## Discovery
 
-A machine registers with its group, ID, name and address. The supervisor returns `membership`: the group's machine names, IDs and addresses. In each pair, the machine with the lower ID opens the peer connection.
+A machine registers with its group, ID, name and address. The supervisor returns `membership`: the group's machine names, IDs and addresses. Each machine opens its own connection to every peer, and sends on it.
 
 ## Commands
 
@@ -27,8 +27,11 @@ These go to one machine:
 | `SET_PROPERTIES` | Apply property changes                                            |
 | `HOLD`           | Hold the pendulum still, with optional angle and property changes |
 | `RELEASE`        | Release the held pendulum                                         |
+| `DESTROY`        | Delete the machine, if something keeps its settings               |
 
 Normally, dragging a pendulum only moves it: a `HOLD` at the new angle, with no changes. In the dashboard's Edit mode, a drag asks for property changes instead, the starting angle included. A machine never changes its own properties to match where it's held.
+
+The dashboard changes Edit mode with `POST /api/groups/:groupId/editing` and `{ editing: true }` or `{ editing: false }`. The supervisor resets the group before enabling Edit mode, and refuses `START` until editing ends. When you finish editing, the dashboard turns Edit mode off, waits for the answer, then sends `START` with a new run ID.
 
 Commands return `{ ok, error? }`. A machine can refuse a change, like a length of zero. The dashboard shows the error. Accepted changes appear in the machine's reports.
 
@@ -73,4 +76,8 @@ Position updates and state reports target 60 Hz. The pages show measured rates; 
 | Air density                                   | kg/m³                                            |
 | Restart deadline                              | Unix milliseconds                                |
 
-Sim Manager answers group and environment changes with HTTP 202 and `{ ok: true }`, or 400 with an error. Its live stream reports progress. Shutting down a process is separate from sending a machine STOP.
+Sim Manager accepts group and environment requests with HTTP 202 and `{ ok: true }`, or returns a 4xx response with `{ ok: false, error }` when refused. Its live stream reports process changes. Machines use the [settings address](#settings) to save properties or request deletion. Shutting down a process is separate from sending a machine STOP.
+
+## Settings
+
+A machine can be told where its settings are kept. It sends its properties there with a `PUT` whenever they change, and a `DELETE` when it's deleted. Nothing waits on the answer. For simulated machines, the address is Sim Manager's `/api/machines/:id/settings` endpoint. Sim Manager saves the properties to the group file a quarter of a second after the last change. A `DELETE` removes the saved member and shuts down its process. Deleting a group's last machine deletes the group file.

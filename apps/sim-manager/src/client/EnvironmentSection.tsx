@@ -27,7 +27,7 @@ export function EnvironmentSection({ environments, selected, values }: Props) {
     <select
       aria-label="Environment"
       value={selected}
-      onChange={({ target }) => api.selectEnvironment(target.value)}
+      onChange={({ target }) => void api.selectEnvironment(target.value)}
     >
       {environments.map((name) => (
         <option key={name}>{name}</option>
@@ -68,7 +68,7 @@ function Slider({ field, initial }: SliderProps) {
 
   function change(next: number) {
     setValue(next);
-    api.changeEnvironment({ [name]: next });
+    void api.changeEnvironment({ [name]: next });
   }
 
   const windArrow = name === 'windDirection' && <WindArrow degrees={value} />;

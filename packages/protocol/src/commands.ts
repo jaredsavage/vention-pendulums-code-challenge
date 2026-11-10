@@ -20,6 +20,9 @@ export const commandSchema = z.discriminatedUnion('type', [
   }),
 ]);
 export type Command = z.infer<typeof commandSchema>;
+
+// A page turning a group's Edit mode on or off.
+export const editingChangeSchema = z.object({ editing: z.boolean() });
 export type StartCommand = Extract<Command, { type: 'START' }>;
 
 // A machine applies the changes it's sent, and reports them in its state.
@@ -36,6 +39,9 @@ export const machineCommandSchema = z.discriminatedUnion('type', [
     angle: z.number().optional(),
   }),
   z.object({ type: z.literal('RELEASE') }),
+  // Takes the machine out of its group for good, if whatever keeps its
+  // settings can.
+  z.object({ type: z.literal('DESTROY') }),
 ]);
 export type MachineCommand = z.infer<typeof machineCommandSchema>;
 export type HoldCommand = Extract<MachineCommand, { type: 'HOLD' }>;

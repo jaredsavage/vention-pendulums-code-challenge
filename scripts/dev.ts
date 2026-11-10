@@ -17,18 +17,10 @@ const { values } = parseArgs({ options: { only: { type: 'string' } } });
 const withSupervisor = values.only !== 'sim-manager';
 const withSimManager = values.only !== 'supervisor';
 
-// A supervisor started here keeps its usual port when it's free, and finds
-// the next one when it isn't. On its own, Sim Manager uses the usual port.
-const supervisorPort = withSupervisor
-  ? await findAvailablePort(SERVICES.HOST, SERVICES.PORT)
-  : SERVICES.PORT;
-const supervisorUrl = `http://${SERVICES.HOST}:${supervisorPort}`;
-const environment = {
-  ...process.env,
-  SUPERVISOR_PORT: String(supervisorPort),
-  SUPERVISOR_URL: supervisorUrl,
-  SUPERVISOR_HOT_RELOAD: 'true',
-};
+// On its own, Sim Manager joins whichever supervisor SUPERVISOR_URL names.
+const environment = withSupervisor
+  ? await localSupervisorEnvironment()
+  : process.env;
 
 const supervisor = withSupervisor ? startSupervisor() : null;
 
@@ -36,8 +28,22 @@ if (withSimManager) {
   await runSimManager();
   supervisor?.kill();
 } else {
-  console.log(`Supervisor at ${supervisorUrl}. Ctrl+C to stop.`);
+  console.log(`Supervisor at ${environment.SUPERVISOR_URL}. Ctrl+C to stop.`);
   process.once('SIGINT', () => supervisor?.kill());
+}
+
+// A supervisor started here keeps its usual port when it's free, and finds the
+// next one when it isn't. Everything started here is told where it is.
+async function localSupervisorEnvironment() {
+  const port = await findAvailablePort(SERVICES.HOST, SERVICES.PORT);
+  const url = `http://${SERVICES.HOST}:${port}`;
+
+  return {
+    ...process.env,
+    SUPERVISOR_PORT: String(port),
+    SUPERVISOR_URL: url,
+    SUPERVISOR_HOT_RELOAD: 'true',
+  };
 }
 
 function startSupervisor() {

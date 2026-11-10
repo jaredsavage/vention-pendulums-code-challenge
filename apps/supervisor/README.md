@@ -2,7 +2,7 @@
 
 Introduces machines to their group and gives you a dashboard to watch and control them. Commands go through the supervisor; the machines make the changes and report back.
 
-It keeps reported state in memory and rebuilds it when machines reconnect. It has no idea Sim Manager exists or that the machines are simulated. Collision recovery stays between the machines.
+Machine reports rebuild its view when machines reconnect. It also keeps Edit mode and the last requested collision setting for each group in memory. Those group controls reset when the supervisor restarts. It has no idea Sim Manager exists or that the machines are simulated. Collision recovery stays between the machines.
 
 ```mermaid
 flowchart LR
@@ -12,7 +12,7 @@ flowchart LR
     MachinePage <-->|HTTP| MachineA
 ```
 
-Start in [src/server/](src/server/) for discovery and commands, or [src/client/](src/client/) for the dashboard. [Messaging](../../docs/messaging.md) covers the commands and reports.
+The backend has two entry points: [api.ts](src/server/api.ts) for HTTP routes and [sockets.ts](src/server/sockets.ts) for machine connections and commands. [state.ts](src/server/state.ts) holds the groups and what their machines last reported. [src/client/](src/client/) is the dashboard. [Messaging](../../docs/messaging.md) covers the commands and reports.
 
 ## Run
 

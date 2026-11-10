@@ -10,13 +10,15 @@
 :root {
   --background: #000;
   --foreground: #fff;
-  --muted: #999;
+  /* The greys are white you can see through, the same as #999, #595959 and
+     #333 on black, so on the blueprint they take on its blue. */
+  --muted: rgb(255 255 255 / 0.6);
+  --outline: rgb(255 255 255 / 0.35);
+  --divider: rgb(255 255 255 / 0.2);
   --connected: #4caf50;
-  --divider: #333;
   --network-link: #555;
   --blueprint: #1c344f;
   --open-tab: rgb(255 255 255 / 0.06);
-  --button-hover: rgb(255 255 255 / 0.08);
   --overlay: rgb(0 0 0 / 0.9);
 
   /* Consolas can't be shipped, so other systems get its closest free match. */
@@ -45,15 +47,15 @@ body {
   display: flex;
   flex-direction: column;
   height: 100vh;
-}
 
-/* With no group open, a quiet note in the middle. */
-#root > p {
-  display: grid;
-  flex: 1;
-  place-items: center;
-  margin: 0;
-  color: var(--muted);
+  /* With no group open, a quiet note in the middle. */
+  > p {
+    display: grid;
+    flex: 1;
+    place-items: center;
+    margin: 0;
+    color: var(--muted);
+  }
 }
 
 /* Text */
@@ -98,12 +100,13 @@ small {
   font-weight: normal;
 }
 
+/* Addresses only show they're links on hover. */
 :is(h1, h2, aside li) small a {
   text-decoration: none;
-}
 
-:is(h1, h2, aside li) small a:hover {
-  text-decoration: underline;
+  &:hover {
+    text-decoration: underline;
+  }
 }
 
 /* Numbers and names stand out from the muted text around them. */
@@ -140,10 +143,10 @@ input[type='checkbox'] {
   margin: 0;
   padding: 0;
   appearance: none;
-}
 
-input[type='checkbox']:checked {
-  background: var(--foreground) url('./images/tick.svg') center no-repeat;
+  &:checked {
+    background: var(--foreground) url('./images/tick.svg') center no-repeat;
+  }
 }
 
 label {
@@ -153,22 +156,19 @@ label {
 }
 
 /* The group commands and the view switch: outlined like the other lines,
-   lighting up a little on hover. */
+   lighting up a little on hover. A disabled one fades into its outline. */
 :is([role='toolbar'], header [role='group']) button {
   padding-inline: 0.75rem;
   border-color: var(--divider);
-}
 
-:is([role='toolbar'], header [role='group'])
-  button:not(:disabled, [aria-pressed='true']):hover {
-  border-color: var(--muted);
-  background: var(--button-hover);
-}
+  &:not(:disabled, [aria-pressed='true']):hover {
+    border-color: var(--muted);
+  }
 
-/* A disabled one fades into its outline. */
-:is([role='toolbar'], header [role='group']) button:disabled {
-  color: var(--divider);
-  opacity: 1;
+  &:disabled {
+    color: var(--divider);
+    opacity: 1;
+  }
 }
 
 /* Header */
@@ -180,50 +180,50 @@ header {
   gap: var(--space) var(--space-large);
   padding: var(--space-large);
   border-bottom: 1px solid var(--divider);
-}
 
-header h1 {
-  margin: 0 auto 0 0;
+  h1 {
+    margin: 0 auto 0 0;
+  }
+
+  p {
+    flex-basis: 100%;
+    margin: 0;
+    color: var(--muted);
+  }
 }
 
 /* Beside the title, out of Sim Manager's frame and into a tab of its own. */
 h1 > a {
   color: var(--muted);
-}
 
-h1 > a:hover {
-  color: var(--foreground);
-}
+  &:hover {
+    color: var(--foreground);
+  }
 
-h1 > a svg {
-  width: 0.5em;
-  height: 0.5em;
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 1.25;
-}
-
-header p {
-  flex-basis: 100%;
-  margin: 0;
-  color: var(--muted);
+  svg {
+    width: 0.5em;
+    height: 0.5em;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.25;
+  }
 }
 
 /* Scene or Network: buttons joined into one, the chosen one filled. Its
    outline matches its fill, and sits over its neighbour's where they overlap. */
 header [role='group'] {
   display: flex;
-}
 
-header [role='group'] button + button {
-  margin-left: -1px;
-}
+  button + button {
+    margin-left: -1px;
+  }
 
-header [role='group'] button[aria-pressed='true'] {
-  position: relative;
-  border-color: var(--foreground);
-  background: var(--foreground);
-  color: var(--background);
+  button[aria-pressed='true'] {
+    position: relative;
+    border-color: var(--foreground);
+    background: var(--foreground);
+    color: var(--background);
+  }
 }
 
 /* Group tabs */
@@ -231,25 +231,25 @@ header [role='group'] button[aria-pressed='true'] {
 nav {
   display: flex;
   border-bottom: 1px solid var(--divider);
-}
 
-nav button {
-  padding: var(--space) var(--space-large);
-  border: 0;
-  border-right: 1px solid var(--divider);
-  background: none;
-  color: var(--muted);
-  font-size: 1.4em;
-  font-weight: 600;
-}
+  button {
+    padding: var(--space) var(--space-large);
+    border: 0;
+    border-right: 1px solid var(--divider);
+    background: none;
+    color: var(--muted);
+    font-size: 1.4em;
+    font-weight: 600;
+  }
 
-nav button[aria-pressed='true'] {
-  background: var(--open-tab);
-  color: var(--foreground);
-}
+  button[aria-pressed='true'] {
+    background: var(--open-tab);
+    color: var(--foreground);
+  }
 
-nav small {
-  font-weight: normal;
+  small {
+    font-weight: normal;
+  }
 }
 
 /* The open group */
@@ -267,10 +267,10 @@ article > section {
   flex: 1;
   grid-template: minmax(0, 1fr) / minmax(0, 1fr);
   min-height: 0;
-}
 
-article > section > * {
-  grid-area: 1 / 1;
+  > * {
+    grid-area: 1 / 1;
+  }
 }
 
 /* The bar lets the pointer through to the drawing, so the scene can be dragged
@@ -285,36 +285,36 @@ article > section > * {
   gap: var(--space);
   padding: var(--space-large);
   pointer-events: none;
-}
 
-/* The buttons, then how the group runs under them. */
-[role='toolbar'] > div {
-  display: grid;
-  justify-items: start;
-  gap: var(--space-small);
-}
+  /* The buttons, then how the group runs under them. */
+  > div {
+    display: grid;
+    justify-items: start;
+    gap: var(--space-small);
+  }
 
-[role='toolbar'] > div > div {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space);
-}
+  > div > div {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space);
+  }
 
-[role='toolbar'] :is(button, label) {
-  pointer-events: auto;
-}
+  :is(button, label) {
+    pointer-events: auto;
+  }
 
-/* As tall as a button, so Edit mode lines up with the buttons beside it. */
-[role='toolbar'] label {
-  padding-block: var(--space-small);
-  border-block: 1px solid transparent;
-}
+  /* As tall as a button, so Edit mode lines up with the buttons beside it. */
+  label {
+    padding-block: var(--space-small);
+    border-block: 1px solid transparent;
+  }
 
-/* Machines answer a group command a moment apart. A note waits half a second
-   before showing, so it doesn't flash up. */
-[role='toolbar'] small {
-  color: var(--muted);
-  animation: appear-late 0.5s step-end;
+  /* Machines answer a group command a moment apart. A note waits half a
+     second before showing, so it doesn't flash up. */
+  small {
+    color: var(--muted);
+    animation: appear-late 0.5s step-end;
+  }
 }
 
 @keyframes appear-late {
@@ -351,7 +351,8 @@ canvas {
   min-height: 0;
   background-image: radial-gradient(
     circle at 1px 1px,
-    rgb(from var(--divider) r g b / var(--canvas-grid-opacity, 1)) 1px,
+    rgb(from var(--divider) r g b / calc(alpha * var(--canvas-grid-opacity, 1)))
+      1px,
     transparent 1px
   );
   background-size: var(--canvas-grid-spacing, 0px)
@@ -359,14 +360,21 @@ canvas {
   background-position: var(--canvas-grid-x, 0px) var(--canvas-grid-y, 0px);
 }
 
-/* While editing, a blueprint: faint dashed lines a metre apart, on blue. */
+figcaption {
+  inset: auto var(--space-large) var(--space-large);
+  text-align: right;
+  white-space: nowrap;
+}
+
+/* Edit mode: a blueprint, with faint dashed lines a metre apart, on blue. */
+
 figure[data-blueprint='true'] canvas {
   background-color: var(--blueprint);
   background-image: url('./images/blueprint-grid.svg');
 }
 
 [role='toolbar'][data-blueprint='true'] button {
-  border-color: rgb(from var(--foreground) r g b / 0.35);
+  border-color: var(--outline);
   background: var(--blueprint);
 }
 
@@ -374,12 +382,6 @@ aside[data-blueprint='true'] {
   border-left-color: var(--blueprint);
   background: var(--blueprint);
   box-shadow: -12px 0 48px rgb(0 0 0 / 0.3);
-}
-
-figcaption {
-  inset: auto var(--space-large) var(--space-large);
-  text-align: right;
-  white-space: nowrap;
 }
 
 /* Network */
@@ -393,44 +395,66 @@ figcaption {
   min-height: 0;
   padding: calc(var(--space-large) * 3) var(--space-large);
   container-type: size;
-}
 
-[data-network] > div {
-  position: relative;
-  width: min(100cqw, 100cqh);
-  aspect-ratio: 1;
-}
+  > div {
+    position: relative;
+    width: min(100cqw, 100cqh);
+    aspect-ratio: 1;
+  }
 
-/* The group's totals, in the bottom corner. */
-[data-network] > p {
-  inset: auto auto var(--space-large) var(--space-large);
-}
+  /* The group's totals in the bottom corner, and the selected machine's
+     beside it: a line each. */
+  > p {
+    inset: auto auto var(--space-large) var(--space-large);
+  }
 
-[data-network] > p span {
-  display: block;
-}
+  p span {
+    display: block;
+  }
 
-[data-network] svg {
-  display: block;
-  width: 100%;
-  height: 100%;
-}
+  svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
 
-[data-network] svg path {
-  fill: none;
-  stroke: var(--network-link);
-  stroke-width: 0.2;
-}
+  svg path {
+    fill: none;
+    stroke: var(--network-link);
+    stroke-width: 0.2;
+  }
 
-/* A dash of no length with round ends is a dot, and shifting them moves it.
-   Each path measures its length in dots, so one unit is one dot's spacing. */
-[data-network] svg path[data-active] {
-  stroke: var(--foreground);
-  stroke-width: 1.5px;
-  stroke-dasharray: 0 1;
-  stroke-linecap: round;
-  vector-effect: non-scaling-stroke;
-  animation: travel 0.6s linear infinite;
+  /* A dash of no length with round ends is a dot, and shifting them moves it.
+     Each path measures its length in dots, so one unit is one dot's spacing. */
+  svg path[data-active] {
+    stroke: var(--foreground);
+    stroke-width: 1.5px;
+    stroke-dasharray: 0 1;
+    stroke-linecap: round;
+    vector-effect: non-scaling-stroke;
+    animation: travel 0.6s linear infinite;
+  }
+
+  svg path[data-faded='true'] {
+    opacity: 0.1;
+  }
+
+  /* The same size as a pendulum's anchor in the scene. */
+  button {
+    position: absolute;
+    width: 18px;
+    height: 18px;
+    padding: 0;
+    font-size: 10px;
+    font-weight: 700;
+    line-height: 1;
+    transform: translate(-50%, -50%);
+  }
+
+  button[aria-pressed='true'] {
+    background: var(--foreground);
+    color: var(--background);
+  }
 }
 
 @keyframes travel {
@@ -439,29 +463,9 @@ figcaption {
   }
 }
 
-[data-network] svg path[data-faded='true'] {
-  opacity: 0.1;
-}
-
-/* The same size as a pendulum's anchor in the scene. */
-[data-network] button {
-  position: absolute;
-  width: 18px;
-  height: 18px;
-  padding: 0;
-  font-size: 10px;
-  font-weight: 700;
-  line-height: 1;
-  transform: translate(-50%, -50%);
-}
-
-[data-network] button[aria-pressed='true'] {
-  background: var(--foreground);
-  color: var(--background);
-}
-
-/* The selected machine, a line each, in a box about an inch in from its node,
-   with its near edge facing it. Under the nodes, so it never hides one. */
+/* The selected machine, in a box about an inch in from its node, with its
+   near edge facing it. Under the nodes, so it never hides one. A grey line
+   parts who it is from its numbers. */
 [data-network] > div > p {
   position: absolute;
   margin: 0;
@@ -477,17 +481,12 @@ figcaption {
     calc(-50% + var(--direction-x) * 50%),
     calc(-50% + var(--direction-y) * 50%)
   );
-}
 
-[data-network] > div > p span {
-  display: block;
-}
-
-/* A grey line between who it is and its numbers. */
-[data-network] > div > p > span:nth-child(2) {
-  margin: 0 calc(-1 * var(--space)) var(--space-small);
-  padding: 0 var(--space) var(--space-small);
-  border-bottom: 1px solid var(--divider);
+  > span:nth-child(2) {
+    margin: 0 calc(-1 * var(--space)) var(--space-small);
+    padding: 0 var(--space) var(--space-small);
+    border-bottom: 1px solid var(--divider);
+  }
 }
 
 /* Machine panel */
@@ -499,45 +498,86 @@ aside {
   padding: var(--space-large);
   overflow-y: auto;
   border-left: 1px solid var(--divider);
-}
 
-/* Level with the title: as tall as its first line, 1.4em at a line height
-   of 1.25. */
-aside > button[aria-label='Close'] {
-  position: absolute;
-  top: var(--space-large);
-  right: var(--space-large);
-  padding: 0 var(--space-small);
-  border: 0;
-  background: none;
-  color: var(--muted);
-  font-size: 1.75em;
-  line-height: 1;
-}
+  /* Level with the title: as tall as its first line, 1.4em at a line height
+     of 1.25. */
+  > button[aria-label='Close'] {
+    position: absolute;
+    top: var(--space-large);
+    right: var(--space-large);
+    padding: 0 var(--space-small);
+    border: 0;
+    background: none;
+    color: var(--muted);
+    font-size: 1.75em;
+    line-height: 1;
 
-aside > button[aria-label='Close']:hover {
-  color: var(--foreground);
-}
+    &:hover {
+      color: var(--foreground);
+    }
+  }
 
-/* The status, then why on a line of its own, so the panel never jumps. A
-   long reason is cut short. */
-aside [role='status'] {
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-}
+  /* The status, then why on a line of its own, so the panel never jumps. A
+     long reason is cut short. */
+  [role='status'] {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
 
-aside [role='status'] b {
-  display: block;
-}
+  [role='status'] b {
+    display: block;
+  }
 
-aside section {
-  margin-bottom: var(--space-large);
-}
+  section {
+    margin-bottom: var(--space-large);
+  }
 
-aside h3 {
-  padding-bottom: var(--space-small);
-  border-bottom: 1px solid var(--divider);
+  h3 {
+    padding-bottom: var(--space-small);
+    border-bottom: 1px solid var(--divider);
+  }
+
+  ul {
+    display: grid;
+    gap: var(--space);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  li button {
+    padding: 0;
+    border: 0;
+    background: none;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+
+  li small {
+    display: block;
+    color: var(--muted);
+  }
+
+  /* Hovering it lists the rest of the group. */
+  small[title] {
+    cursor: default;
+  }
+
+  /* Delete machine: last in the panel, across its width, outlined like the
+     other lines. */
+  > button:last-child {
+    width: 100%;
+    margin-top: var(--space-large);
+    border-color: var(--outline);
+    background: transparent;
+
+    &:hover {
+      border-color: var(--muted);
+    }
+  }
 }
 
 /* A stepper row: the name, then − value +. The buttons' columns stay put
@@ -548,56 +588,33 @@ aside section > div {
   align-items: center;
   gap: var(--space-small);
   margin-bottom: var(--space-small);
+
+  :is(button, input) {
+    background: transparent;
+  }
+
+  button {
+    border: 0;
+  }
+
+  input {
+    width: 100%;
+    padding-inline: 0;
+    border-width: 0 0 1px;
+    text-align: center;
+  }
+
+  /* Outside Edit, just the value, in the same place and as tall as the field,
+     so nothing moves when Edit turns on. */
+  output {
+    grid-column: 3;
+    padding-block: var(--space-small);
+    border-bottom: 1px solid transparent;
+    text-align: center;
+  }
 }
 
-aside section > div :is(button, input) {
-  background: transparent;
-}
-
-aside section > div button {
-  border: 0;
-}
-
-aside section > div input {
-  width: 100%;
-  padding-inline: 0;
-  border-width: 0 0 1px;
-  text-align: center;
-}
-
-/* Outside Edit, just the value, in the same place and as tall as the field,
-   so nothing moves when Edit turns on. */
-aside section > div output {
-  grid-column: 3;
-  padding-block: var(--space-small);
-  border-bottom: 1px solid transparent;
-  text-align: center;
-}
-
-aside ul {
-  display: grid;
-  gap: var(--space);
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-aside li button {
-  padding: 0;
-  border: 0;
-  background: none;
-}
-
-aside li button:hover {
-  text-decoration: underline;
-}
-
-aside li small {
-  display: block;
-  color: var(--muted);
-}
-
-/* Whether it's connected, as a coloured dot. */
+/* Whether a neighbour's connected, as a coloured dot. */
 [role='img'][data-connected] {
   display: inline-block;
   width: 0.5rem;
@@ -607,15 +624,10 @@ aside li small {
   background: var(--muted);
   transition: background-color 0.5s;
   vertical-align: middle;
-}
 
-[role='img'][data-connected='true'] {
-  background: var(--connected);
-}
-
-/* Hovering it lists the rest of the group. */
-aside small[title] {
-  cursor: default;
+  &[data-connected='true'] {
+    background: var(--connected);
+  }
 }
 
 /* Connection lost */

@@ -56,7 +56,11 @@ export function useSupervisor() {
   }
 
   function send(groupId: string, command: Command) {
-    void showOutcome(api.sendCommand(groupId, command));
+    return showOutcome(api.sendCommand(groupId, command));
+  }
+
+  function setEditing(groupId: string, editing: boolean) {
+    return showOutcome(api.setEditing(groupId, editing));
   }
 
   function configure(
@@ -67,5 +71,5 @@ export function useSupervisor() {
     return showOutcome(api.configureMachine(groupId, machineId, command));
   }
 
-  return { ...state, updateHz, connected, error, send, configure };
+  return { ...state, updateHz, connected, error, send, setEditing, configure };
 }

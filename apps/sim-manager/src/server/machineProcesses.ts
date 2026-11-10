@@ -1,47 +1,46 @@
-import { spawn, type ChildProcess } from 'node:child_process';
+import type { ChildProcess } from 'node:child_process';
 import { once } from 'node:events';
-import { basename } from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
-import {
-  machinePropertiesSchema,
-  type Environment,
-  type MachineProperties,
-} from '@repo/protocol';
+import type { Environment, MachineProperties } from '@repo/protocol';
 import { CONFIG } from '../../config.ts';
 import type { MachineProcess, SimManagerState } from '../state.ts';
-import { environmentNames, readEnvironment } from './environments.ts';
 import {
   createGroupFile,
-  readGroupNames,
+  deleteGroupFile,
+  environmentNames,
+  readEnvironment,
+  readGroup,
+  readMembers,
+  readSavedGroups,
+  renameGroupFile,
   writeGroupMembers,
-  type MachineSnapshot,
-} from './groupFiles.ts';
+  type GroupMember,
+} from './files.ts';
 import {
-  addedMachine,
-  numberedMachine,
-  readGroupMachines,
+  askMachine,
+  isHealthy,
+  prepareLaunch,
+  spawnMachine,
   type MachineDefinition,
-} from './machineDefinitions.ts';
+  type PlacedMember,
+} from './machineLaunch.ts';
 
 const HEALTH_POLL_MS = 100;
-const REQUEST_TIMEOUT_MS = 2000;
-// In a big group, some machines never finish closing after a shutdown request.
 const STOP_TIMEOUT_MS = 3000;
-
-// Machines run on the same Node as Sim Manager: node.exe on Windows.
-const MACHINE_RUNTIME = process.execPath;
-const MACHINE_RUNTIME_NAME = basename(MACHINE_RUNTIME);
+// Wait until edits pause before writing the group file.
+const SAVE_DELAY_MS = 250;
 
 export type StateListener = (state: SimManagerState) => void;
 
-// Keeps the machines of the selected groups running, starting and stopping
-// only what changes. It's the only thing that stops them. Saving and copying
-// groups go through it too, since they read from the running machines.
+// Starts and stops machine processes, and saves reported properties to their
+// entries in the group files. Every change goes through one queue, so they
+// happen one at a time, in the order they were asked for.
 export class MachineProcesses {
   private current = initialState();
   private readonly children = new Map<string, ChildProcess>();
   private readonly onChange: StateListener;
   private changes = Promise.resolve();
+  private readonly saveTimers = new Map<string, NodeJS.Timeout>();
 
   constructor(onChange: StateListener) {
     this.onChange = onChange;
@@ -53,15 +52,76 @@ export class MachineProcesses {
     return this.current;
   }
 
-  // What's wanted changes at once, so choices made during a launch all count.
-  selectGroups(names: string[]) {
-    const { groups } = this.state;
-    const selectedGroups = groups.filter((name) => names.includes(name));
+  // Running groups.
+
+  // Update selection immediately so changes made during startup aren't lost.
+  selectGroups(groupFiles: string[]) {
+    const known = this.state.groups.map(({ file }) => file);
+    const selectedGroups = known.filter((file) => groupFiles.includes(file));
 
     this.update({ selectedGroups });
 
     return this.oneAtATime(() => this.matchSelectedGroups());
   }
+
+  // Group files.
+
+  // A new group, started straight away: one pendulum, or a duplicate of
+  // another group's file.
+  createGroup(name: string, duplicateOf?: string) {
+    return this.oneAtATime(() => this.addGroup(name, duplicateOf));
+  }
+
+  // Running machines keep their group ID until they restart, so only stopped
+  // groups can be renamed.
+  renameGroup(groupFile: string, name: string) {
+    return this.oneAtATime(() => {
+      renameGroupFile(groupFile, name);
+      this.update({ groups: readSavedGroups() });
+    });
+  }
+
+  // Stop the group's machine processes before deleting its files.
+  deleteGroup(groupFile: string) {
+    return this.oneAtATime(() => this.removeGroup(groupFile));
+  }
+
+  // Group files added or changed by hand show up.
+  reloadGroups() {
+    this.update({ groups: readSavedGroups() });
+  }
+
+  // Machines.
+
+  // A copy of the rightmost machine joins the group's file. A running group
+  // launches it straight away.
+  addMachine(groupFile: string) {
+    return this.oneAtATime(() => this.addMember(groupFile));
+  }
+
+  // Its entry stays in the group file.
+  endProcess(id: string) {
+    const ending = this.state.processes.filter((machine) => machine.id === id);
+
+    return this.oneAtATime(() => this.stopProcesses(ending));
+  }
+
+  // A machine sends its properties whenever they change, and its group file is
+  // saved shortly after.
+  keepSettings(id: string, properties: MachineProperties) {
+    const machine = this.findProcess(id);
+    if (!machine) return;
+
+    this.updateProcess(id, { properties });
+    this.saveSoon(machine.groupFile);
+  }
+
+  // Deleting the last saved member also deletes the group file.
+  removeMachine(id: string) {
+    void this.oneAtATime(() => this.deleteMember(id));
+  }
+
+  // Environment.
 
   selectEnvironment(environment: string) {
     return this.oneAtATime(() => this.applyEnvironment(environment));
@@ -71,39 +131,29 @@ export class MachineProcesses {
     return this.oneAtATime(() => this.applyChanges(changes));
   }
 
-  // A snapshot of the group as it's running now, saved over its own file.
-  updateGroupFile(groupFile: string) {
-    return this.oneAtATime(() => this.saveRunningGroup(groupFile));
-  }
-
-  // A new group, started straight away: one pendulum, or a copy of a running
-  // group as it is now.
-  createGroup(name: string, copyOf?: string) {
-    return this.oneAtATime(() => this.addGroup(name, copyOf));
-  }
-
-  // One more machine in a running group, a copy of its rightmost one.
-  addMachine(groupFile: string) {
-    return this.oneAtATime(() => this.launchNextInLine(groupFile));
-  }
-
-  endProcess(id: string) {
-    const ending = this.state.processes.filter((machine) => machine.id === id);
-
-    return this.oneAtATime(() => this.stopProcesses(ending));
-  }
-
   close() {
+    // Pending saves are discarded on shutdown, so recent property edits may be lost.
+    for (const timer of this.saveTimers.values()) {
+      clearTimeout(timer);
+    }
+
     return this.oneAtATime(() => this.stopProcesses(this.state.processes));
   }
 
-  // Changes run in order, one at a time. One that fails, like a group file
-  // that doesn't parse, is reported, and the changes after it still run.
-  private oneAtATime(change: () => Promise<void>) {
+  // One that fails, like a group file that doesn't parse, is reported, and the
+  // changes after it still run.
+  private oneAtATime(change: () => void | Promise<void>) {
     this.changes = this.changes.then(change).catch(console.error);
 
     return this.changes;
   }
+
+  private update(changes: Partial<SimManagerState>) {
+    this.current = { ...this.current, ...changes };
+    this.onChange(this.state);
+  }
+
+  // Starting and stopping.
 
   private async matchSelectedGroups() {
     const { selectedGroups, processes } = this.state;
@@ -117,36 +167,31 @@ export class MachineProcesses {
   }
 
   private async launch(groupFile: string) {
-    const { environmentValues: environment } = this.state;
-    const takeNumber = this.numberTaker();
-    const definitions = readGroupMachines(groupFile, environment, takeNumber);
+    const members = readMembers(groupFile).map((member, memberIndex) => ({
+      ...member,
+      memberIndex,
+    }));
 
-    await this.startAll(groupFile, definitions);
+    await this.startMembers(groupFile, members);
   }
 
-  private async launchNextInLine(groupFile: string) {
-    const { environmentValues: environment } = this.state;
-    const snapshots = await this.snapshotGroup(groupFile);
-    const properties = nextInLine(snapshots);
+  private async startMembers(groupFile: string, members: PlacedMember[]) {
+    const group = readGroup(groupFile);
+    const environment = this.state.environmentValues;
     const takeNumber = this.numberTaker();
-    const number = takeNumber();
-    const member = { number, givenName: undefined, properties };
-    const definition = addedMachine(groupFile, member, environment);
+    const launches = members.map((member) => {
+      const number = takeNumber();
 
-    await this.startAll(groupFile, [definition]);
-  }
-
-  private async startAll(groupFile: string, definitions: MachineDefinition[]) {
-    const launched = definitions.map((definition) =>
-      launchedProcess(definition, groupFile),
-    );
+      return prepareLaunch({ groupFile, group, member, number, environment });
+    });
+    const launched = launches.map(({ machine }) => machine);
 
     this.update({ processes: [...this.state.processes, ...launched] });
-    await Promise.all(definitions.map((definition) => this.start(definition)));
+    await Promise.all(launches.map(({ definition }) => this.start(definition)));
   }
 
-  // A group's machines are numbered as they're read, each taking the lowest
-  // number nothing else is using.
+  // Each machine takes the lowest number nothing else is using. Numbers run
+  // across everything that's running, so groups never clash.
   private numberTaker() {
     const taken = new Set(this.state.processes.map(({ number }) => number));
 
@@ -189,76 +234,33 @@ export class MachineProcesses {
     }
   }
 
-  private async applyEnvironment(environment: string) {
-    const environmentValues = readEnvironment(environment);
-
-    this.update({ environment, environmentValues });
-    await this.sendToMachines(environmentValues);
-  }
-
-  private async applyChanges(changes: Partial<Environment>) {
-    const environmentValues = { ...this.state.environmentValues, ...changes };
-
-    this.update({ environmentValues });
-    await this.sendToMachines(changes);
-  }
-
-  private async sendToMachines(changes: Partial<Environment>) {
-    const { processes } = this.state;
-    const body = JSON.stringify(changes);
-    const requests = processes.map(({ url }) => postEnvironment(url, body));
-
-    await Promise.allSettled(requests);
-  }
-
-  private async saveRunningGroup(groupFile: string) {
-    const snapshots = await this.snapshotGroup(groupFile);
-
-    writeGroupMembers(groupFile, snapshots);
-  }
-
-  // The new group is selected along with the others, so it starts.
-  private async addGroup(name: string, copyOf: string | undefined) {
-    const copies = copyOf ? await this.snapshotGroup(copyOf) : undefined;
-    const fileName = createGroupFile(name, copies);
-
-    const groups = readGroupNames();
-    const selectedGroups = [...this.state.selectedGroups, fileName];
-
-    this.update({ groups, selectedGroups });
-    await this.matchSelectedGroups();
-  }
-
-  // Every machine has to answer, or nothing is saved.
-  private snapshotGroup(groupFile: string) {
-    const members = this.state.processes.filter(
-      (machine) => machine.groupFile === groupFile,
-    );
-
-    return Promise.all(members.map(readSnapshot));
-  }
-
   private async stopProcesses(processes: MachineProcess[]) {
     await Promise.all(processes.map((machine) => this.stop(machine)));
   }
 
+  // Ask the machine to shut down so it can unregister from the supervisor.
   private async stop({ id, url }: MachineProcess) {
     const child = this.children.get(id);
     if (!child) return;
 
     const exited = once(child, 'exit');
 
-    await requestShutdown(url, child);
+    try {
+      await askMachine(url, '/api/shutdown', { method: 'POST' });
+    } catch {
+      child.kill();
+    }
+
     await Promise.race([exited, delay(STOP_TIMEOUT_MS)]);
     child.kill();
     await exited;
   }
 
-  // However a process ended, a group file with none left is no longer
-  // selected, so the next change doesn't launch it again.
+  // Deselect a group when its last process exits, so another selection change
+  // won't restart it.
   private removeProcess(id: string) {
     const { processes, selectedGroups } = this.state;
-    const endedGroup = processes.find((ended) => ended.id === id)?.groupFile;
+    const endedGroup = this.findProcess(id)?.groupFile;
     const remaining = processes.filter((machine) => machine.id !== id);
     const groupsLeft = new Set(remaining.map(({ groupFile }) => groupFile));
     const stillSelected = selectedGroups.filter(
@@ -276,9 +278,144 @@ export class MachineProcesses {
     this.update({ processes });
   }
 
-  private update(changes: Partial<SimManagerState>) {
-    this.current = { ...this.current, ...changes };
-    this.onChange(this.state);
+  private findProcess(id: string) {
+    return this.state.processes.find((machine) => machine.id === id);
+  }
+
+  private groupProcesses(groupFile: string) {
+    return this.state.processes.filter(
+      (machine) => machine.groupFile === groupFile,
+    );
+  }
+
+  // Group files.
+
+  // The new group is selected along with the others, so it starts.
+  private async addGroup(name: string, duplicateOf: string | undefined) {
+    const groupFile = createGroupFile(name, duplicateOf);
+    const groups = readSavedGroups();
+    const selectedGroups = [...this.state.selectedGroups, groupFile];
+
+    this.update({ groups, selectedGroups });
+    await this.matchSelectedGroups();
+  }
+
+  private async removeGroup(groupFile: string) {
+    const { selectedGroups } = this.state;
+    const stillSelected = selectedGroups.filter((group) => group !== groupFile);
+
+    clearTimeout(this.saveTimers.get(groupFile));
+    this.update({ selectedGroups: stillSelected });
+    await this.stopProcesses(this.groupProcesses(groupFile));
+    deleteGroupFile(groupFile);
+
+    this.update({ groups: readSavedGroups() });
+  }
+
+  // Members. Each running machine knows its entry in its group file by its
+  // place in the list.
+
+  private async addMember(groupFile: string) {
+    const members = this.currentMembers(groupFile);
+    const added = { givenName: undefined, properties: nextInLine(members) };
+    const running = this.groupProcesses(groupFile).length > 0;
+
+    writeGroupMembers(groupFile, [...members, added]);
+    if (running) {
+      const memberIndex = members.length;
+      await this.startMembers(groupFile, [{ ...added, memberIndex }]);
+    }
+  }
+
+  // Looked up when its turn comes, since a deletion queued before it can move
+  // its entry up a place.
+  private async deleteMember(id: string) {
+    const machine = this.findProcess(id);
+    if (!machine) return;
+
+    const { groupFile, memberIndex } = machine;
+    const members = this.currentMembers(groupFile);
+    const lastMember = members.length === 1;
+    if (lastMember) {
+      await this.removeGroup(groupFile);
+
+      return;
+    }
+
+    await this.stop(machine);
+    writeGroupMembers(groupFile, members.toSpliced(memberIndex, 1));
+    this.moveUpMembersAfter(groupFile, memberIndex);
+  }
+
+  // The entries after a deleted one each move up a place.
+  private moveUpMembersAfter(groupFile: string, memberIndex: number) {
+    const processes = this.state.processes.map((machine) => {
+      const after =
+        machine.groupFile === groupFile && machine.memberIndex > memberIndex;
+      const movedUp = { ...machine, memberIndex: machine.memberIndex - 1 };
+
+      return after ? movedUp : machine;
+    });
+
+    this.update({ processes });
+  }
+
+  // Saving.
+
+  // A machine changed, so its group file will be saved shortly.
+  private saveSoon(groupFile: string) {
+    const save = () => {
+      this.saveTimers.delete(groupFile);
+      void this.oneAtATime(() => this.saveGroup(groupFile));
+    };
+
+    clearTimeout(this.saveTimers.get(groupFile));
+    this.saveTimers.set(groupFile, setTimeout(save, SAVE_DELAY_MS));
+  }
+
+  private saveGroup(groupFile: string) {
+    writeGroupMembers(groupFile, this.currentMembers(groupFile));
+  }
+
+  // Use reported properties for running machines and saved properties for
+  // machines whose processes have stopped.
+  private currentMembers(groupFile: string): GroupMember[] {
+    const running = this.groupProcesses(groupFile);
+
+    return readMembers(groupFile).map((member, memberIndex) => {
+      const machine = running.find((one) => one.memberIndex === memberIndex);
+
+      return machine ? { ...member, properties: machine.properties } : member;
+    });
+  }
+
+  // Environment.
+
+  private async applyEnvironment(environment: string) {
+    const environmentValues = readEnvironment(environment);
+
+    this.update({ environment, environmentValues });
+    await this.sendToMachines(environmentValues);
+  }
+
+  private async applyChanges(changes: Partial<Environment>) {
+    const environmentValues = { ...this.state.environmentValues, ...changes };
+
+    this.update({ environmentValues });
+    await this.sendToMachines(changes);
+  }
+
+  private async sendToMachines(changes: Partial<Environment>) {
+    const post = {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(changes),
+    };
+    const requests = this.state.processes.map(({ url }) =>
+      askMachine(url, '/api/environment', post),
+    );
+
+    await Promise.allSettled(requests);
   }
 }
 
@@ -288,7 +425,7 @@ function initialState(): SimManagerState {
 
   return {
     supervisorUrl: CONFIG.SUPERVISOR_URL,
-    groups: readGroupNames(),
+    groups: readSavedGroups(),
     selectedGroups: [],
     environments: environmentNames,
     environment,
@@ -297,57 +434,10 @@ function initialState(): SimManagerState {
   };
 }
 
-// How a machine shows on the page until it's started and answering.
-function launchedProcess(
-  { number, groupId, machine }: MachineDefinition,
-  groupFile: string,
-): MachineProcess {
-  const { id, name, url } = machine;
-
-  return {
-    id,
-    number,
-    groupFile,
-    groupId,
-    name,
-    url,
-    program: MACHINE_RUNTIME_NAME,
-    pid: null,
-    online: false,
-  };
-}
-
-// The IPC channel closes when this process dies, however it dies.
-function spawnMachine(definition: MachineDefinition) {
-  const processVariables = {
-    ...process.env,
-    SUPERVISOR_URL: CONFIG.SUPERVISOR_URL,
-    MACHINE_DEFINITION: JSON.stringify(definition),
-  };
-
-  return spawn(MACHINE_RUNTIME, [CONFIG.MACHINE_PROGRAM], {
-    stdio: ['ignore', 'ignore', 'ignore', 'ipc'],
-    env: processVariables,
-    windowsHide: true,
-  });
-}
-
-async function isHealthy(url: string) {
-  try {
-    const response = await fetch(`${url}/api/health`, {
-      signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
-    });
-
-    return response.ok;
-  } catch {
-    return false;
-  }
-}
-
 // A copy of the rightmost machine, one spacing further right: the gap between
 // the last two, or the width of a full swing when there's only one.
-function nextInLine(snapshots: MachineSnapshot[]): MachineProperties {
-  const leftToRight = snapshots
+function nextInLine(members: GroupMember[]): MachineProperties {
+  const leftToRight = members
     .map(({ properties }) => properties)
     .toSorted((a, b) => a.anchor.x - b.anchor.x);
   const last = leftToRight.at(-1)!;
@@ -360,41 +450,4 @@ function nextInLine(snapshots: MachineSnapshot[]): MachineProperties {
   const anchor = { x: centimetres / 100, y: last.anchor.y };
 
   return { ...last, anchor };
-}
-
-// A name that's just the machine's number wasn't given by its group file.
-async function readSnapshot({
-  number,
-  name,
-  url,
-}: MachineProcess): Promise<MachineSnapshot> {
-  const response = await fetch(`${url}/api/properties`, {
-    signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
-  });
-  const properties = machinePropertiesSchema.parse(await response.json());
-  const numbered = numberedMachine(number, undefined);
-  const givenName = name === numbered.name ? undefined : name;
-
-  return { givenName, properties };
-}
-
-async function postEnvironment(url: string, body: string) {
-  await fetch(`${url}/api/environment`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body,
-    signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
-  });
-}
-
-// A machine that shuts itself down gets to leave the supervisor properly.
-async function requestShutdown(url: string, child: ChildProcess) {
-  try {
-    await fetch(`${url}/api/shutdown`, {
-      method: 'POST',
-      signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
-    });
-  } catch {
-    child.kill();
-  }
 }

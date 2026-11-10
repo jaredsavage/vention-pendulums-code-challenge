@@ -188,6 +188,25 @@ describe('supervisor commands', () => {
     expect(refusingCommands).toEqual([start, { type: 'STOP' }]);
   });
 
+  // Edit mode belongs to the group, so no page can start it mid-edit.
+  it('keeps a group still while it is being edited', async () => {
+    supervisor = await startSupervisor({ port: 0 });
+    const socket = await registerMachine('editable', 'machine-01', 5101);
+    const commands = recordCommands(socket, 'command');
+    const start = { type: 'START', runId: 'after-editing', resume: false };
+
+    const editing = await post('/api/groups/editable/editing', {
+      editing: true,
+    });
+    expect(editing).toEqual({ ok: true });
+    expect(commands).toEqual([{ type: 'RESET' }]);
+    expect((await snapshot()).groups[0]?.editing).toBe(true);
+    expect(await statusOf('/api/groups/editable/command', start)).toBe(409);
+
+    await post('/api/groups/editable/editing', { editing: false });
+    expect(await statusOf('/api/groups/editable/command', start)).toBe(200);
+  });
+
   it('turns away a group command while another is still going', async () => {
     supervisor = await startSupervisor({ port: 0 });
     const slow = await registerMachine('factory', 'machine-01', 5101);

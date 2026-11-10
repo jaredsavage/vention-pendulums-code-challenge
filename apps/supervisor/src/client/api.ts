@@ -12,6 +12,9 @@ export const api = {
   sendCommand: (groupId: string, command: Command) =>
     post(`${groupPath(groupId)}/command`, command),
 
+  setEditing: (groupId: string, editing: boolean) =>
+    post(`${groupPath(groupId)}/editing`, { editing }),
+
   configureMachine: (
     groupId: string,
     machineId: string,

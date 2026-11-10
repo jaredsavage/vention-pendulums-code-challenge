@@ -1,24 +1,47 @@
-import type { Environment } from '@repo/protocol';
+import { resultSchema, type Environment, type Result } from '@repo/protocol';
 
-// Everything the Sim Manager page asks of Sim Manager. Nothing waits for an
-// answer: the live state shows what changed.
+const JSON_HEADERS = { 'Content-Type': 'application/json' };
+
+// Everything the Sim Manager page asks of Sim Manager. Each answer says whether
+// it was accepted; the live state shows what changed.
 export const api = {
   openStateStream: () => new EventSource('/api/state/stream'),
-  selectGroups: (names: string[]) => post('/api/groups', { names }),
-  createGroup: (name: string, copyOf?: string) =>
-    post('/api/groups/new', { name, copyOf }),
-  updateGroup: (name: string) => post('/api/groups/update', { name }),
-  addMachine: (name: string) => post('/api/groups/add-machine', { name }),
+  selectGroups: (groupFiles: string[]) => post('/api/groups', { groupFiles }),
+  createGroup: (name: string, duplicateOf?: string) =>
+    post('/api/groups/new', { name, duplicateOf }),
+  renameGroup: (groupFile: string, name: string) =>
+    post('/api/groups/rename', { groupFile, name }),
+  deleteGroup: (groupFile: string) => post('/api/groups/delete', { groupFile }),
+  reloadGroups: () => post('/api/groups/reload', {}),
+  addMachine: (groupFile: string) =>
+    post('/api/groups/add-machine', { groupFile }),
   endProcess: (id: string) => post('/api/processes/end', { id }),
+  // The same as deleting it from the dashboard: its settings, and it, are gone.
+  deleteMachine: (id: string) =>
+    send(`/api/machines/${encodeURIComponent(id)}/settings`, {
+      method: 'DELETE',
+    }),
   selectEnvironment: (name: string) => post('/api/environment', { name }),
   changeEnvironment: (changes: Partial<Environment>) =>
     post('/api/environment/values', changes),
 };
 
 function post(path: string, body: unknown) {
-  void fetch(path, {
+  const init = {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: JSON_HEADERS,
     body: JSON.stringify(body),
-  });
+  };
+
+  return send(path, init);
+}
+
+async function send(path: string, init: RequestInit): Promise<Result> {
+  try {
+    const response = await fetch(path, init);
+
+    return resultSchema.parse(await response.json());
+  } catch {
+    return { ok: false, error: 'Could not reach Sim Manager.' };
+  }
 }

@@ -4,7 +4,6 @@
 */
 
 @import '@fontsource-variable/hanken-grotesk';
-@import '@fontsource-variable/inconsolata';
 
 :root {
   --background: #000;
@@ -15,7 +14,8 @@
   --menu: #111;
   --pill: rgb(67 67 67 / 0.37);
   --edge: rgb(255 255 255 / 0.15);
-  --glass: rgb(255 255 255 / 0.06);
+  /* The supervisor's green for a connected machine. */
+  --on: #4caf50;
 
   /* Light and shade, for the raised and pressed-in parts. */
   --soft-highlight: rgb(255 255 255 / 0.11);
@@ -26,9 +26,9 @@
 
   --sheen: linear-gradient(160deg, var(--lip), transparent 45%);
   --window-shadow: 0 16px 48px var(--shadow);
+  /* The switches, sliders and name field are pressed into the panel. */
+  --pressed-in: inset 0 2px 7px var(--groove), 0 1px 2px var(--lip);
 
-  /* Consolas can't be shipped, so other systems get its closest free match. */
-  --mono-font: Consolas, 'Inconsolata Variable', monospace;
   --title-font: 'Hanken Grotesk Variable', system-ui, sans-serif;
   --small-font-size: 0.75rem;
 
@@ -41,6 +41,7 @@
   --control-height: 22px;
   --control-radius: calc(var(--control-height) / 2);
   --socket-width: 3px;
+  --switch-width: 26px;
 
   color-scheme: dark;
 }
@@ -51,9 +52,9 @@
 body {
   margin: 0;
   background: var(--background);
-  background-image: var(--sheen), url('./images/page-flecks.svg');
-  background-size: auto, 250px;
-  background-blend-mode: normal, luminosity;
+  background-image: url('./images/page-flecks.svg');
+  background-size: 250px;
+  background-blend-mode: luminosity;
   color: var(--foreground);
   font: 0.875rem / 1.5 var(--title-font);
   font-variant-numeric: tabular-nums;
@@ -112,16 +113,27 @@ h2 {
   line-height: 1.25;
 }
 
-h2 {
-  font-size: 1em;
+/* A groove between the parts: a dark line, lit along its lower lip. The
+   title's stays put while the sections scroll under it, so both its lines
+   are drawn inside it, where the scrolling can't cover them. */
+h1 {
+  margin-bottom: 0;
+  padding: 0 var(--space-large) var(--space-large);
+  border-bottom: 1px solid var(--lip);
+  box-shadow: inset 0 -1px var(--shadow);
+  font-size: 1.75em;
+
+  /* What the page is for, under its title. */
+  small {
+    display: block;
+    color: var(--muted);
+    font-size: var(--small-font-size);
+    font-weight: normal;
+  }
 }
 
-/* What the page is for, under its title. */
-h1 small {
-  display: block;
-  color: var(--muted);
-  font-size: var(--small-font-size);
-  font-weight: normal;
+h2 {
+  font-size: 1em;
 }
 
 /* Everything under the title scrolls together on a short screen. */
@@ -134,29 +146,18 @@ main > div {
   scrollbar-width: thin;
 }
 
-/* A groove between the parts: a dark line, lit along its lower lip. The
-   title's stays put while the sections scroll under it, so both its lines
-   are drawn inside it, where the scrolling can't cover them. */
-h1 {
-  margin-bottom: 0;
-  padding: 0 var(--space-large) var(--space-large);
-  border-bottom: 1px solid var(--lip);
-  box-shadow: inset 0 -1px var(--shadow);
-  font-size: 1.75em;
-}
-
 section {
   margin-bottom: var(--space-large);
   padding: var(--space-large) var(--space-large) 0;
-}
 
-section + section {
-  border-top: 1px solid var(--shadow);
-  box-shadow: inset 0 1px var(--lip);
-}
+  & + section {
+    border-top: 1px solid var(--shadow);
+    box-shadow: inset 0 1px var(--lip);
+  }
 
-section:last-child {
-  margin-bottom: 0;
+  &:last-child {
+    margin-bottom: 0;
+  }
 }
 
 /* A section's title, with its control to the right. */
@@ -165,176 +166,22 @@ header {
   justify-content: space-between;
   align-items: center;
   margin-bottom: var(--space-large);
-}
 
-header h2 {
-  margin: 0;
-}
-
-/* Process list */
-
-ul {
-  display: grid;
-  gap: var(--space);
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  font-family: var(--mono-font);
-  font-size: var(--small-font-size);
-}
-
-/* One line each, cut short when the panel is too narrow. As tall as a button,
-   so a line holds still when one appears. */
-li {
-  min-height: var(--control-height);
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-}
-
-/* A group's heading, with New Machine at the end of the line. */
-li:has(> h3) {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-top: var(--space);
-}
-
-li h3 {
-  margin: 0;
-  color: var(--muted);
-  font-size: var(--small-font-size);
-  font-weight: normal;
-}
-
-/* The process number in a small black box, like a terminal window. */
-li b {
-  display: inline-grid;
-  place-items: center;
-  box-sizing: border-box;
-  width: 20px;
-  height: 18px;
-  margin-right: var(--space);
-  border: 1px solid var(--line);
-  border-top-width: 2px;
-  background: var(--background);
-  cursor: default;
-  font-size: 11px;
-  font-weight: normal;
-  vertical-align: middle;
-}
-
-/* A machine's address opens its page, and only says so on hover. */
-li a {
-  color: inherit;
-  text-decoration: none;
-}
-
-li a:hover {
-  text-decoration: underline;
-}
-
-/* A machine's line: its number and address, then End while you're on it. The
-   address gives way to End. */
-li:has(> a) {
-  display: flex;
-  align-items: center;
-
-  > a {
-    flex: 1;
-    overflow: hidden;
-    text-overflow: ellipsis;
+  h2 {
+    margin: 0;
   }
+}
 
-  &:not(:hover, :has(:focus-visible)) > button {
-    display: none;
-  }
+/* What Sim Manager refused, under the heading it happened in. */
+p[role='alert'] {
+  margin: 0 0 var(--space);
+  font-size: var(--small-font-size);
 }
 
 /* Controls */
 
-label {
-  gap: var(--space);
-  margin-bottom: var(--space);
-  font-size: var(--small-font-size);
-}
-
-/* A checkbox, then its name. */
-label:has(> input[type='checkbox']) {
-  display: flex;
-  align-items: center;
-}
-
-/* Pressed into the panel like the sliders. Ticked, it fills with glass and a
-   thin tick to match the dropdown's chevron. */
-input[type='checkbox'] {
-  flex: none;
-  box-sizing: border-box;
-  width: 16px;
-  height: 16px;
-  margin: 0;
-  border: 1px solid var(--socket);
-  border-radius: 3px;
-  appearance: none;
-  box-shadow:
-    inset 0 2px 7px var(--groove),
-    0 1px 2px var(--lip);
-}
-
-input[type='checkbox']:checked {
-  background: var(--glass) url('./images/tick.svg') no-repeat center;
-}
-
-input[type='checkbox']:hover {
-  border-color: var(--muted);
-}
-
-/* A row in the group list: a group, or a new group's name. As tall as a
-   button, so a row holds still when its buttons appear. */
-div:has(> label > input[type='checkbox']),
-div:has(> input[type='text']) {
-  display: flex;
-  align-items: center;
-  gap: var(--space);
-  min-height: var(--control-height);
-  margin-bottom: var(--space-small);
-}
-
-/* A group, then Update and Copy while you're on it. A long name stays on one
-   line, and gives way to them. */
-div:has(> label > input[type='checkbox']) {
-  > label {
-    flex: 1;
-    min-width: 0;
-    margin-bottom: 0;
-    overflow: hidden;
-    white-space: nowrap;
-  }
-
-  &:not(:hover, :has(:focus-visible)) > button {
-    display: none;
-  }
-}
-
-/* A new group's name, with just a × to cancel, where a group's checkbox would
-   be. */
-div:has(> input[type='text']) {
-  > button {
-    width: 16px;
-    padding: 0;
-    border: 0;
-    background: none;
-    color: var(--muted);
-    font-size: 14px;
-  }
-
-  > button:hover {
-    color: var(--foreground);
-  }
-}
-
-/* Flat grey like the dropdown, with a soft darker outline. The same font
-   wherever it is. */
+/* Flat grey like the dropdown, with a soft darker outline that lights up, like
+   a switch's. The same font wherever it is. */
 button {
   box-sizing: border-box;
   height: var(--control-height);
@@ -347,45 +194,69 @@ button {
   font-family: var(--title-font);
   font-size: var(--small-font-size);
   cursor: pointer;
+
+  &:is(:hover, :focus-visible) {
+    border-color: var(--muted);
+  }
 }
 
-/* The outline lights up, like a checkbox's. */
-button:is(:hover, :focus-visible) {
-  border-color: var(--muted);
-}
-
-/* New Group only shows while you're on the groups, and New Machine while
-   you're on its group. They keep their place, so the heading doesn't move when
-   they appear. */
-section:not(:hover, :has(:focus-visible)) > header > button,
-ul:not(:hover, :has(:focus-visible)) > li:has(> h3) > button {
-  visibility: hidden;
-}
-
-/* A new group's name, typed into a groove pressed into the panel like the
-   sliders'. The groove reaches back into the gap after the ×, so the name
-   lines up with the groups' names. */
-input[type='text'] {
-  flex: 1;
-  min-width: 0;
-  box-sizing: border-box;
-  height: var(--control-height);
-  margin-left: calc(-1 * var(--space));
-  padding: 0 var(--space);
+/* The tree's controls are plain text, lighting up on hover: the ⋯ on the
+   groups, each group and each machine, and what's in their menus. */
+:where(header, li, div:has(> [role='switch'])) > button {
+  padding: 0;
   border: 0;
-  border-radius: var(--control-radius);
-  background: transparent;
-  box-shadow:
-    inset 0 2px 7px var(--groove),
-    0 1px 2px var(--lip);
-  color: inherit;
-  font: inherit;
+  background: none;
+  color: var(--muted);
+
+  &:hover {
+    color: var(--foreground);
+  }
+}
+
+label {
+  margin-bottom: var(--space);
   font-size: var(--small-font-size);
 }
 
-/* It's only there while you're typing in it, so it needs no focus ring. */
-input[type='text']:focus {
-  outline: none;
+/* A checkbox drawn as a switch, pressed into the panel like the sliders, with
+   a white knob like theirs. On, the knob slides across and the groove turns
+   green. */
+[role='switch'] {
+  position: relative;
+  flex: none;
+  box-sizing: border-box;
+  width: var(--switch-width);
+  height: 16px;
+  margin: 0;
+  border: 1px solid var(--socket);
+  border-radius: 8px;
+  appearance: none;
+  box-shadow: var(--pressed-in);
+  cursor: pointer;
+
+  &::after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--foreground);
+    transition: translate 0.15s;
+  }
+
+  &:checked {
+    background: var(--on);
+  }
+
+  &:checked::after {
+    translate: 10px 0;
+  }
+
+  &:hover {
+    border-color: var(--muted);
+  }
 }
 
 /* A pill sunk in a socket, with a thin chevron in place of the native one.
@@ -417,7 +288,8 @@ option {
   background: var(--menu);
 }
 
-/* The name and value on one line, with the slider beneath them. */
+/* An environment value: the name and value on one line, with the slider
+   beneath them. */
 label:has(> input[type='range']) {
   display: grid;
   grid-template-columns: 1fr auto;
@@ -453,9 +325,7 @@ input[type='range'] {
   border-radius: var(--control-radius);
   appearance: none;
   background: transparent;
-  box-shadow:
-    inset 0 2px 7px var(--groove),
-    0 1px 2px var(--lip);
+  box-shadow: var(--pressed-in);
   cursor: pointer;
 }
 
@@ -486,4 +356,194 @@ input::-moz-range-thumb {
   border: 0;
   border-radius: 50%;
   background: var(--foreground);
+}
+
+/* Groups */
+
+/* A row in the group list: a group, or a new group's name. As tall as a
+   button, so a row holds still when its buttons appear. */
+div:has(> [role='switch']),
+div:has(> input[type='text']) {
+  display: flex;
+  align-items: center;
+  gap: var(--space);
+  min-height: var(--control-height);
+  margin-bottom: var(--space-small);
+}
+
+/* A group's switch, then its name. A long name stays on one line, and gives
+   way to the menu. The name dims while the group's off. */
+div:has(> [role='switch']) {
+  > label {
+    flex: 1;
+    min-width: 0;
+    margin-bottom: 0;
+    overflow: hidden;
+    white-space: nowrap;
+  }
+
+  &:has(> [role='switch']:not(:checked)) > label {
+    color: var(--muted);
+  }
+}
+
+/* A group's name being typed, with just a × to cancel, where a group's switch
+   would be. */
+div:has(> input[type='text']) > button {
+  width: var(--switch-width);
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--muted);
+  font-size: 14px;
+
+  &:hover {
+    color: var(--foreground);
+  }
+}
+
+/* Typed into a groove pressed into the panel like the sliders'. The groove
+   reaches back into the gap after the ×, so the name lines up with the groups'
+   names. It's only there while you're typing in it, so it needs no focus
+   ring. */
+input[type='text'] {
+  flex: 1;
+  min-width: 0;
+  box-sizing: border-box;
+  height: var(--control-height);
+  margin-left: calc(-1 * var(--space));
+  padding: 0 var(--space);
+  border: 0;
+  border-radius: var(--control-radius);
+  background: transparent;
+  box-shadow: var(--pressed-in);
+  color: inherit;
+  font: inherit;
+  font-size: var(--small-font-size);
+
+  &:focus {
+    outline: none;
+  }
+}
+
+/* A group's machines. Under the group: the number boxes under its switch, the
+   addresses under its name. */
+ul {
+  display: grid;
+  gap: var(--space);
+  margin: 0 0 var(--space);
+  padding: 0;
+  list-style: none;
+  font-size: var(--small-font-size);
+}
+
+/* One line each, cut short when the panel is too narrow. As tall as a button,
+   so a line holds still when one appears. */
+li {
+  min-height: var(--control-height);
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* The process number in a small black box, like a terminal window. It sits
+   centred under the group's switch, so the addresses line up with the names. */
+li b {
+  --box-width: 20px;
+  --centring: calc((var(--switch-width) - var(--box-width)) / 2);
+
+  display: inline-grid;
+  place-items: center;
+  box-sizing: border-box;
+  width: var(--box-width);
+  height: 18px;
+  margin: 0 calc(var(--centring) + var(--space)) 0 var(--centring);
+  border: 1px solid var(--line);
+  border-top-width: 2px;
+  background: var(--background);
+  cursor: default;
+  font-size: 11px;
+  font-weight: normal;
+  vertical-align: middle;
+}
+
+/* A machine's name opens its page, and only says so on hover. */
+li a {
+  color: inherit;
+  text-decoration: none;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+/* A machine's line: its number, name and address, then its menu. The address
+   is cut short first, then a long name. */
+li:has(> a) {
+  display: flex;
+  align-items: center;
+
+  > :is(a, small) {
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  > small {
+    flex: 1 1 0;
+    margin-left: var(--space);
+    color: var(--muted);
+    cursor: default;
+    user-select: none;
+  }
+}
+
+/* A group's or a machine's ⋯ only shows while you're on its row. */
+:is(div:has(> [role='switch']), li:has(> a)):not(
+    :hover,
+    :has(:focus-visible),
+    :has(:popover-open)
+  )
+  > button {
+  display: none;
+}
+
+/* Menus */
+
+/* A ⋯ opens its menu just under it. Each row has its own. */
+:has(> menu) {
+  anchor-scope: --menu;
+}
+
+button:has(+ menu) {
+  anchor-name: --menu;
+  font-size: 16px;
+  line-height: 1;
+}
+
+/* The dropdown's dark list, inside the panel's edge. Each item takes its
+   whole row, so the row lights up and takes the click. */
+menu {
+  inset: auto;
+  margin: var(--space-small) 0 0;
+  padding: var(--space-small) 0;
+  border: 1px solid var(--edge);
+  border-radius: 3px;
+  background: var(--menu);
+  box-shadow: var(--window-shadow);
+  color: inherit;
+  list-style: none;
+  font-size: var(--small-font-size);
+  position-anchor: --menu;
+  position-area: bottom span-left;
+
+  button {
+    width: 100%;
+    padding: 0 var(--space);
+    text-align: left;
+  }
+
+  :disabled {
+    opacity: 0.4;
+    cursor: default;
+  }
 }

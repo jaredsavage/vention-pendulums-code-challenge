@@ -5,7 +5,8 @@ import type {
   PeerMessage,
   PeerPayload,
 } from '@repo/protocol';
-import { Machine } from '../src/server/machine.ts';
+import { Machine } from '../src/machine.ts';
+import { createState } from '../src/state.ts';
 
 type Properties = Omit<MachineProperties, 'type'>;
 
@@ -45,9 +46,8 @@ const group = testGroup();
 export const own = group.machines[0]!;
 export const peer = group.machines[1]!;
 
-// The machine under test, in a group of two, connected to its peer, which
-// hasn't said anything yet.
-export function joinedMachine() {
+// The machine under test, told it's in a group of two.
+export function introducedMachine() {
   const definition = {
     groupId: group.id,
     machine: own,
@@ -55,10 +55,17 @@ export function joinedMachine() {
     stopOnCollision: true,
     environment: group.environment,
   };
-  const machine = new Machine(definition, vi.fn());
-
+  const machine = new Machine(createState(definition));
+  machine.send = vi.fn();
   machine.updateMembership(group);
-  machine.peersChanged([peer.id]);
+
+  return machine;
+}
+
+// Connected to its peer, which hasn't said anything yet.
+export function joinedMachine() {
+  const machine = introducedMachine();
+  machine.peerConnected(peer.id);
 
   return machine;
 }
@@ -82,12 +89,12 @@ export function fromPeer(payload: PeerPayload): PeerMessage {
 
 // The peer reports its bob right where this machine's is.
 export function collide(machine: Machine) {
-  const { runId, position } = machine.state;
+  const { runId, position } = machine.report;
 
   machine.receive(
     fromPeer({ type: 'POSITION_UPDATE', runId, angle: 0, position }),
   );
-  machine.sync();
+  machine.tick();
 }
 
 function pendulum(number: number, properties: Properties) {

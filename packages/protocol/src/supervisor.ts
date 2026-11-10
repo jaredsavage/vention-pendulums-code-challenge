@@ -11,9 +11,11 @@ export const observedMachineSchema = machineIdentitySchema.extend({
 });
 export type ObservedMachine = z.infer<typeof observedMachineSchema>;
 
+// A group being edited has been reset, and won't start until editing ends.
 export const groupStateSchema = z.object({
   id: z.string(),
   machines: z.array(observedMachineSchema),
+  editing: z.boolean(),
 });
 export type GroupState = z.infer<typeof groupStateSchema>;
 

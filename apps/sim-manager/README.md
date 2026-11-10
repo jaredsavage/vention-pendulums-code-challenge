@@ -6,11 +6,11 @@ The page embeds the supervisor dashboard in an iframe, for demo convenience. Bot
 
 Group and environment files live in [data/](data/). On startup, it selects the first of each alphabetically. Each machine gets its starting properties, environment and supervisor address when it's launched.
 
-Launching a machine again reloads its properties from the group file, so previous edits are lost unless you Update the group first. Update asks each running machine for its properties and saves them over the group's file. Collision restarts keep the same process and properties.
+Machines send accepted property changes back to Sim Manager, which saves them to their entries in the group file after a short delay. Shut Down stops a process and keeps its saved definition; Delete removes both. Deleting the last saved machine also deletes the group. Recent edits can be lost if you quit before the delayed save completes.
 
-New Group makes a group file with one pendulum, and Copy makes one from a running group as it is now. Either way, the new group starts straight away. New Machine adds a copy of a running group's rightmost machine, one spacing to its right, and End stops one machine's process.
+New and duplicated groups start straight away. Machines added to a stopped group are saved and launch when the group starts.
 
-[src/server/](src/server/) handles processes and the API; [src/client/](src/client/) is the page.
+[api.ts](src/server/api.ts) lists the HTTP routes and handlers. [machineProcesses.ts](src/server/machineProcesses.ts) manages the processes, and [files.ts](src/server/files.ts) the group files and environments. [src/client/](src/client/) is the page.
 
 ## Run
 

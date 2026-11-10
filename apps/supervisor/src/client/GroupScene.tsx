@@ -2,6 +2,7 @@ import type { GroupState, ObservedMachine, Point } from '@repo/protocol';
 import { Scene } from './Scene/Scene.tsx';
 import type { Part } from './Scene/pendulumAt.ts';
 import type { Link, Pendulum } from './Scene/types.ts';
+import type { View } from './Scene/view.ts';
 import type { SendMachineCommand } from './useCommandQueue.ts';
 import { useDragMachine } from './useDragMachine.ts';
 
@@ -16,7 +17,8 @@ interface Props {
   onSelect: (id: string) => void;
   configure: SendMachineCommand;
   editing: boolean;
-  resetButtonContainer: HTMLElement | null;
+  view: View;
+  onViewChange: (change: (view: View) => View) => void;
 }
 
 export function GroupScene({
@@ -26,7 +28,8 @@ export function GroupScene({
   onSelect,
   configure,
   editing,
-  resetButtonContainer,
+  view,
+  onViewChange,
 }: Props) {
   const { draggableParts, drag, release } = useDragMachine(configure, editing);
   const pendulums = groupPendulums(group, selectedId);
@@ -52,7 +55,8 @@ export function GroupScene({
       draggable={draggableParts}
       blueprint={editing}
       inset={OVERLAY_INSET}
-      resetButtonContainer={resetButtonContainer}
+      view={view}
+      onViewChange={onViewChange}
     >
       <div>
         Sync rate <b>{updateHz}</b> Hz

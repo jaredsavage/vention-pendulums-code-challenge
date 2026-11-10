@@ -4,7 +4,6 @@ export const canvasStyle = {
   foreground: '#fff',
   background: '#000',
   blueprint: '#1c344f',
-  muted: '#999',
   font: "Consolas, 'Inconsolata Variable', monospace",
   smallFontSize: 12,
   spaceLarge: 16,

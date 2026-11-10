@@ -17,6 +17,7 @@ const machineProgram = fileURLToPath(
 export const CONFIG = {
   HOST: host,
   PORT: port,
+  URL: `http://${host}:${port}`,
   SUPERVISOR_URL: supervisorUrl,
   DATA_DIRECTORY: dataDirectory,
   MACHINE_PORT_START: machinePortStart,

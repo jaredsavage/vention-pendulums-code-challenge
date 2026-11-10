@@ -18,8 +18,9 @@ These are the rules I care about most. If a task seems to need breaking one, sto
 
 - **Simulated machines are machines.** Physics and motion stay inside the simulated device. Coordination, shared messages, the supervisor, and the browser only deal with commands and reported measurements. They don't assume simulation steps, never look at simulation data, and never run another device's physics. Estimating from reports is fine, like smoothing a drawing between them or working out when an impact probably happened.
 - **Machines own their properties and settings.** The supervisor can request changes and keeps what machines report back. Values nobody has reported yet stay unknown.
+- **Machine persistence stays behind an address.** Machines can save accepted property changes through a settings address supplied at startup. They don't know how the settings are stored or which service stores them.
 - **Applications don't import each other.** Code that `supervisor`, `sim-manager` and `sim-machine` share lives in a package under `packages/`, and the packages know nothing about the apps. Sim Manager runs Sim Machine as a separate program, found by package name.
-- **Each part keeps its own job.** Machines coordinate collisions and restarts with each other; the supervisor introduces them and passes along group and machine commands. Sim Manager only manages simulated processes. It never talks to the supervisor, and the supervisor doesn't know it exists. Swapping in a real machine shouldn't touch the supervisor or its client.
+- **Each part keeps its own job.** Machines coordinate collisions and restarts with each other; the supervisor introduces them and passes along group and machine commands. Sim Manager manages simulated processes and their saved definitions. It never talks to the supervisor, and the supervisor doesn't know it exists. Swapping in a real machine shouldn't touch the supervisor or its client.
 - **Use HTTP for request and response, server-sent events for live data to browsers, and Socket.IO between services.**
 
 ## Self-documenting code
@@ -62,6 +63,7 @@ if (dimensionMismatch) {
 
 ## Functions
 
+- Keep each backend's HTTP routes and handlers in `api.ts`, and socket connections and event handlers in `sockets.ts`. Define small handlers as named variables, followed by one organised registration list with section comments. Keep these entry points easy to read without following chains of forwarding files.
 - Clarity beats cleverness, and fewer concepts beats fewer lines. Don't pack decisions, parsing, or side effects into dense expressions.
 - A higher-level function reads as a sequence of domain steps: what happens up top, how it happens further down.
 - Each function does one thing, and its name says what. If one function holds state, process control, and HTTP routes, split it.
@@ -74,7 +76,7 @@ if (dimensionMismatch) {
 
 **Whitespace.** Blank line before a `return`, unless it's the only thing in the block. Blank line after a block, before the next statement. Blank lines between the separate steps of a function. Prettier doesn't handle these for you.
 
-**Comments.** Comment only to explain a non-obvious decision or constraint, a surprise, or a file's purpose when it isn't clear. If a comment repeats the code, delete it.
+**Comments.** Comment only to explain a non-obvious decision or constraint, a surprise, or a file's purpose when it isn't clear. If a comment repeats the code, delete it. Explain behaviour in plain English, with clear subjects.
 
 ## One source of truth
 
@@ -108,6 +110,8 @@ Use one name for one thing, in code and in docs. Some existing code still uses o
 | machine properties | What a machine reports about itself: anchor, length, etc | object, configuration              |
 | neighbour          | A machine close enough that it could collide with us     | neighbor                           |
 | peer               | Any other machine in the group                           | neighbour, unless it really is one |
+| Shut Down          | Stop a process, preserving its saved definition          | End                                |
+| Delete             | Stop a process and remove its saved definition           | Self destruct                      |
 
 ## UI
 
@@ -159,4 +163,4 @@ Before finishing, read the whole functions you touched, not just the lines you a
 - Did you leave behind dead branches, duplicated decisions, or misleading names?
 - Did you add something that already exists somewhere else in the repo?
 
-When you're not sure what good looks like here, read [machines.ts](apps/supervisor/src/server/machines.ts) and [commands.ts](apps/supervisor/src/server/commands.ts) in the supervisor, and work the same way.
+When you're not sure what good looks like here, read [api.ts](apps/supervisor/src/server/api.ts) and [sockets.ts](apps/supervisor/src/server/sockets.ts) in the supervisor, and work the same way.

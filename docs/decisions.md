@@ -16,7 +16,7 @@ The origin is on the ground, so anything above it has a negative y value.
 
 I wanted each simulated machine to behave like a real one. They handle their own movement, report their measurements, and respond to commands over the network. The supervisor has no idea they're simulated.
 
-The physics stay inside the pendulum. The rest of the machine just reads what it measures. Other machines and the pages get those measurements over the network. The dashboard smooths the drawing between reports.
+The physics stay inside each machine. Other machines and the pages get those measurements over the network. The dashboard smooths the drawing between reports.
 
 A real machine speaking the same protocol could take its place without changing the supervisor. More setup than running everything in one simulation, but keeps that boundary clear.
 
@@ -40,7 +40,9 @@ We only have pendulums, so the dashboard is written to draw and configure those.
 
 The pages send requests over HTTP and get live updates through server-sent events. The browser already has `EventSource` for that, including reconnection, so there's no extra client library.
 
-Machines use Socket.IO to talk to their peers and the supervisor, over WebSocket. Saves us writing the connection handling ourselves. A real machine would need a Socket.IO client too. Sim Manager uses HTTP to manage machine processes.
+Machines use Socket.IO to talk to their peers and the supervisor, over WebSocket. Saves us writing the connection handling ourselves. A real machine would need a Socket.IO client too.
+
+Each machine opens its own connection to every peer, so a pair shares two. Simpler than agreeing who calls whom, and fine for groups this size. Sim Manager uses HTTP to manage machine processes.
 
 ## Checking incoming data
 
@@ -50,7 +52,13 @@ Zod is only for data coming from outside the program. Anything the program makes
 
 ## Keeping state in memory
 
-The supervisor can rebuild its view from machine reports when they reconnect, so I haven't added a database. Changes to a machine last as long as its process. If we wanted to save those between launches, SQLite would be a reasonable option.
+The supervisor can rebuild its view from machine reports when they reconnect, so I haven't added a database. It also remembers the last collision setting requested for each group, so new machines get it too. That setting and Edit mode reset when the supervisor restarts.
+
+Machines can save property changes through an address they're given at startup. For a simulated machine that's Sim Manager, which writes them into the group file. The supervisor stays out of it, and a machine doesn't know what's on the other end.
+
+## Shared Edit mode
+
+Edit mode lives on the supervisor so every open dashboard agrees. While it's on, the supervisor refuses START requests, so another page can't start the group mid-edit.
 
 ## Each app has its own styling
 

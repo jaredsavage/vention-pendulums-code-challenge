@@ -1,9 +1,9 @@
 import type { ReactNode } from 'react';
-import type { Command, ObservedMachine } from '@repo/protocol';
+import type { Command, ObservedMachine, Result } from '@repo/protocol';
 
 const countdownFormat = new Intl.DurationFormat('en', { style: 'narrow' });
 
-const EDIT_HINT = 'Stop, reset and edit the group';
+const EDIT_HINT = 'Stop, reset and edit the group, then start it again';
 const START_HINT = 'Start the group from where each pendulum starts';
 const RESUME_HINT = 'Resume the group from where it paused';
 const PAUSE_HINT = 'Pause every pendulum where it is';
@@ -13,10 +13,10 @@ const COLLISION_HINT =
 
 interface Props {
   machines: ObservedMachine[];
-  send: (command: Command) => void;
+  send: (command: Command) => Promise<Result>;
   canEdit: boolean;
   editing: boolean;
-  onEditingChange: (editing: boolean) => void;
+  onEditingChange: (editing: boolean) => Promise<Result>;
   children?: ReactNode;
 }
 
@@ -33,39 +33,50 @@ export function GroupCommands({
   const noMachines = machines.length === 0;
   const stopOnCollision =
     !noMachines && machines.every(({ state }) => state?.stopOnCollision);
+  const collision = collisionReason(machines);
   const countdown = restartCountdown(machines);
   const split = splitStatus(machines);
 
-  // Editing starts from where each pendulum starts, so the group goes back
-  // there first.
-  function toggleEditing() {
+  // The supervisor resets the group for editing, and keeps it still until
+  // editing ends. Leaving starts it again, from where each pendulum now starts.
+  async function toggleEditing() {
     if (!editing) {
-      send({ type: 'RESET' });
+      void onEditingChange(true);
+
+      return;
     }
 
-    onEditingChange(!editing);
+    const stoppedEditing = await onEditingChange(false);
+    if (stoppedEditing.ok) {
+      const runId = crypto.randomUUID();
+      void send({ type: 'START', runId, resume: false });
+    }
   }
 
   function start() {
     const runId = crypto.randomUUID();
-    send({ type: 'START', runId, resume: can.resume });
+    void send({ type: 'START', runId, resume: can.resume });
   }
 
   function pause() {
-    send({ type: 'PAUSE' });
+    void send({ type: 'PAUSE' });
   }
 
   function stop() {
-    send({ type: 'STOP' });
+    void send({ type: 'STOP' });
   }
 
   function setCollisionStopping(enabled: boolean) {
-    send({ type: 'SET_COLLISION_STOPPING', enabled });
+    void send({ type: 'SET_COLLISION_STOPPING', enabled });
   }
 
   const editCheckbox = canEdit && (
     <label title={EDIT_HINT}>
-      <input type="checkbox" checked={editing} onChange={toggleEditing} />
+      <input
+        type="checkbox"
+        checked={editing}
+        onChange={() => void toggleEditing()}
+      />
       Edit mode
     </label>
   );
@@ -107,10 +118,19 @@ export function GroupCommands({
       Stop on collision
     </label>
   );
-  const countdownText = countdown && (
-    <small role="status">
+  // Who hit whom, and under it, the countdown once every machine has stopped.
+  const restartText = countdown ? (
+    <>
       <b>{countdown}</b> until restart
-    </small>
+    </>
+  ) : (
+    'waiting for every machine to stop'
+  );
+  const collisionText = collision && (
+    <>
+      <small role="status">{collision}</small>
+      <small>{restartText}</small>
+    </>
   );
   const splitText = split && <small role="status">{split}</small>;
 
@@ -118,7 +138,7 @@ export function GroupCommands({
   const runSettings = !editing && (
     <>
       {collisionCheckbox}
-      {countdownText}
+      {collisionText}
       {splitText}
     </>
   );
@@ -169,6 +189,14 @@ function availableCommands(machines: ObservedMachine[]) {
     pause: someMoving,
     stop: !allStopped,
   };
+}
+
+// While the group recovers from a collision, what the machines say happened,
+// like "Pendulum 02 hit Pendulum 01".
+function collisionReason(machines: ObservedMachine[]) {
+  const recovering = machines.find(({ state }) => state?.collision);
+
+  return recovering?.state?.reason ?? null;
 }
 
 // After a collision, the soonest restart any machine has scheduled, in whole
